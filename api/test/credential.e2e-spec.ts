@@ -45,6 +45,13 @@ describe('Credential', () => {
     expect(res.body.telefono).toBeUndefined();
     expect(res.body.passwordHash).toBeUndefined();
     expect(res.body.ineFrente).toBeUndefined();
+    expect(res.body.ineReverso).toBeUndefined();
+    expect(res.body.id).toBeUndefined();
+    expect(res.body.credentialToken).toBeUndefined();
+    expect(res.body.fechaNacimiento).toBeUndefined();
+    expect(res.body.calle).toBeUndefined();
+    expect(res.body.codigoPostal).toBeUndefined();
+    expect(res.body.numExt).toBeUndefined();
   });
 
   it('token inexistente -> 404', async () => {
