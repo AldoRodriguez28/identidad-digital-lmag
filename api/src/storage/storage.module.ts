@@ -4,7 +4,7 @@ import { LocalDiskStorage } from './local-disk.storage';
 
 @Global()
 @Module({
-  providers: [{ provide: StorageService, useClass: LocalDiskStorage }],
+  providers: [{ provide: StorageService, useFactory: () => new LocalDiskStorage() }],
   exports: [StorageService],
 })
 export class StorageModule {}

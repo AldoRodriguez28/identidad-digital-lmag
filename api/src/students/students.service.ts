@@ -4,6 +4,7 @@ import { Prisma, Student } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordService } from '../auth/password.service';
 import { SessionService } from '../auth/session.service';
+import { StorageService } from '../storage/storage.service';
 import { RegisterStudentDto } from './dto/register-student.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
@@ -14,7 +15,12 @@ export type StudentPublicView = {
 
 @Injectable()
 export class StudentsService {
-  constructor(private prisma: PrismaService, private passwords: PasswordService, private sessions: SessionService) {}
+  constructor(
+    private prisma: PrismaService,
+    private passwords: PasswordService,
+    private sessions: SessionService,
+    private storage: StorageService,
+  ) {}
 
   private async assertInterestsExist(ids: string[]): Promise<void> {
     if (!ids.length) return;
@@ -122,5 +128,18 @@ export class StudentsService {
     });
 
     return this.buildProfile(studentId);
+  }
+
+  async saveIne(
+    studentId: string,
+    frente: Buffer,
+    frenteType: string,
+    reverso: Buffer,
+    reversoType: string,
+  ) {
+    const ineFrente = await this.storage.put(frente, frenteType);
+    const ineReverso = await this.storage.put(reverso, reversoType);
+    await this.prisma.student.update({ where: { id: studentId }, data: { ineFrente, ineReverso } });
+    return { ok: true as const };
   }
 }

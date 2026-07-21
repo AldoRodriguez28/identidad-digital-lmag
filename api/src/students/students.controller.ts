@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpCode, Patch, Post, Req, Res, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import type { Request, Response } from 'express';
 import type { Student } from '@prisma/client';
 import { StudentsService } from './students.service';
@@ -56,5 +57,26 @@ export class StudentsController {
   @Patch('me/profile')
   updateProfile(@CurrentStudent() student: any, @Body() dto: UpdateProfileDto) {
     return this.students.updateProfile(student.id, dto);
+  }
+
+  @UseGuards(StudentGuard)
+  @Post('me/ine')
+  @HttpCode(200)
+  @UseInterceptors(FileFieldsInterceptor(
+    [{ name: 'ineFrente', maxCount: 1 }, { name: 'ineReverso', maxCount: 1 }],
+    { limits: { fileSize: 5 * 1024 * 1024 } },
+  ))
+  async uploadIne(
+    @CurrentStudent() student: any,
+    @UploadedFiles() files: { ineFrente?: Express.Multer.File[]; ineReverso?: Express.Multer.File[] },
+  ) {
+    const frente = files?.ineFrente?.[0];
+    const reverso = files?.ineReverso?.[0];
+    if (!frente || !reverso) throw new BadRequestException('Se requieren INE frente y reverso');
+    const ALLOWED = ['image/png', 'image/jpeg'];
+    if (!ALLOWED.includes(frente.mimetype) || !ALLOWED.includes(reverso.mimetype)) {
+      throw new BadRequestException('Formato inválido: solo PNG o JPG');
+    }
+    return this.students.saveIne(student.id, frente.buffer, frente.mimetype, reverso.buffer, reverso.mimetype);
   }
 }
