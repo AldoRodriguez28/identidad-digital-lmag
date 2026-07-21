@@ -8,6 +8,7 @@ import { StudentLoginDto } from './dto/student-login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { StudentGuard } from './student.guard';
 import { CurrentStudent } from './current-student.decorator';
+import { isPngOrJpeg } from './image-signature';
 
 const COOKIE = process.env.SESSION_COOKIE_NAME ?? 'idsid';
 const DAY = 24 * 60 * 60 * 1000;
@@ -76,6 +77,9 @@ export class StudentsController {
     const ALLOWED = ['image/png', 'image/jpeg'];
     if (!ALLOWED.includes(frente.mimetype) || !ALLOWED.includes(reverso.mimetype)) {
       throw new BadRequestException('Formato inválido: solo PNG o JPG');
+    }
+    if (!isPngOrJpeg(frente.buffer) || !isPngOrJpeg(reverso.buffer)) {
+      throw new BadRequestException('Contenido de imagen inválido');
     }
     return this.students.saveIne(student.id, frente.buffer, frente.mimetype, reverso.buffer, reverso.mimetype);
   }

@@ -71,4 +71,12 @@ describe('Students INE', () => {
       .attach('ineReverso', PNG, { filename: 'r.png', contentType: 'image/png' });
     expect(res.status).toBe(401);
   });
+
+  it('mimetype PNG pero bytes no son imagen -> 400', async () => {
+    const fakeBytes = Buffer.from('esto no es una imagen');
+    const res = await request(app.getHttpServer()).post('/students/me/ine').set('Cookie', cookie)
+      .attach('ineFrente', fakeBytes, { filename: 'f.png', contentType: 'image/png' })
+      .attach('ineReverso', fakeBytes, { filename: 'r.png', contentType: 'image/png' });
+    expect(res.status).toBe(400);
+  });
 });
