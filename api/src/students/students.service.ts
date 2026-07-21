@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PasswordService } from '../auth/password.service';
 import { SessionService } from '../auth/session.service';
 import { StorageService } from '../storage/storage.service';
+import { EmailService } from '../email/email.service';
 import { edadFrom } from './edad';
 import { RegisterStudentDto } from './dto/register-student.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -21,6 +22,7 @@ export class StudentsService {
     private passwords: PasswordService,
     private sessions: SessionService,
     private storage: StorageService,
+    private email: EmailService,
   ) {}
 
   private async assertInterestsExist(ids: string[]): Promise<void> {
@@ -159,5 +161,16 @@ export class StudentsService {
       intereses: s.interests.map((si) => si.interest.nombre),
       redes: { facebook: s.facebook, instagram: s.instagram, tiktok: s.tiktok, whatsapp: s.whatsapp },
     };
+  }
+
+  async requestReset(correo: string): Promise<void> {
+    const student = await this.prisma.student.findUnique({ where: { correo } });
+    if (!student) return;
+    const token = randomBytes(24).toString('base64url');
+    await this.prisma.passwordReset.create({
+      data: { studentId: student.id, token, expiresAt: new Date(Date.now() + 60 * 60 * 1000) },
+    });
+    const link = `${process.env.WEB_URL ?? 'http://localhost:3000'}/recuperar/${token}`;
+    await this.email.send(correo, 'Recupera tu contraseña', `Abre este enlace para restablecerla: ${link}`);
   }
 }

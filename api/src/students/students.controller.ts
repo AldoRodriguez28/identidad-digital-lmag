@@ -6,6 +6,7 @@ import { StudentsService } from './students.service';
 import { RegisterStudentDto } from './dto/register-student.dto';
 import { StudentLoginDto } from './dto/student-login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ResetRequestDto } from './dto/reset-request.dto';
 import { StudentGuard } from './student.guard';
 import { CurrentStudent } from './current-student.decorator';
 import { isPngOrJpeg } from './image-signature';
@@ -39,6 +40,12 @@ export class StudentsController {
     const sid = req.cookies?.[COOKIE];
     if (sid) await this.students.logout(sid);
     res.clearCookie(COOKIE, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+    return { ok: true };
+  }
+
+  @Post('password-reset/request')
+  async requestReset(@Body() dto: ResetRequestDto) {
+    await this.students.requestReset(dto.correo);
     return { ok: true };
   }
 

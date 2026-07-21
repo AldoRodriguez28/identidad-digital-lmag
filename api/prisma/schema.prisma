@@ -73,6 +73,17 @@ model Student {
   passwordHash           String
   createdAt              DateTime @default(now())
   interests              StudentInterest[]
+  passwordResets         PasswordReset[]
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 model Interest {
