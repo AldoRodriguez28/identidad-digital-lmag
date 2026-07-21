@@ -4,36 +4,35 @@ import { SessionService } from './session.service';
 describe('SessionService', () => {
   const prisma = new PrismaService();
   const svc = new SessionService(prisma);
-  let userId: string;
 
-  beforeAll(async () => {
-    await prisma.$connect();
-    const u = await prisma.internalUser.create({
-      data: { email: `s${Date.now()}@t.com`, passwordHash: 'x', nombre: 'T', rol: 'admin' },
-    });
-    userId = u.id;
-  });
+  beforeAll(async () => { await prisma.$connect(); });
   afterAll(async () => {
-    await prisma.session.deleteMany({ where: { internalUserId: userId } });
-    await prisma.internalUser.delete({ where: { id: userId } });
+    await prisma.session.deleteMany({ where: { principalId: 'p-test' } });
     await prisma.$disconnect();
   });
 
-  it('create + resolve devuelve el usuario', async () => {
-    const s = await svc.create(userId, true);
+  it('create + resolve devuelve el principal', async () => {
+    const s = await svc.create('internal_user', 'p-test', true);
     const r = await svc.resolve(s.id);
-    expect(r?.user.id).toBe(userId);
+    expect(r).toEqual({ principalType: 'internal_user', principalId: 'p-test' });
   });
 
   it('destroy invalida la sesión', async () => {
-    const s = await svc.create(userId, false);
+    const s = await svc.create('student', 'p-test', false);
     await svc.destroy(s.id);
     expect(await svc.resolve(s.id)).toBeNull();
   });
 
-  it('resolve devuelve null para sesión expirada', async () => {
-    const s = await svc.create(userId, false);
+  it('resolve null para sesión expirada', async () => {
+    const s = await svc.create('student', 'p-test', false);
     await prisma.session.update({ where: { id: s.id }, data: { expiresAt: new Date(Date.now() - 1000) } });
     expect(await svc.resolve(s.id)).toBeNull();
+  });
+
+  it('create con remember=false expira en ~1 día', async () => {
+    const s = await svc.create('student', 'p-test', false);
+    const ms = s.expiresAt.getTime() - Date.now();
+    expect(ms).toBeGreaterThan(23 * 3600 * 1000);
+    expect(ms).toBeLessThan(25 * 3600 * 1000);
   });
 });

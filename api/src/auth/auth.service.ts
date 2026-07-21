@@ -17,7 +17,7 @@ export class AuthService {
     if (!(await this.passwords.verify(user.passwordHash, password))) {
       throw new UnauthorizedException();
     }
-    const session = await this.sessions.create(user.id, remember);
+    const session = await this.sessions.create('internal_user', user.id, remember);
     return { session, user: { id: user.id, nombre: user.nombre, rol: user.rol } };
   }
 

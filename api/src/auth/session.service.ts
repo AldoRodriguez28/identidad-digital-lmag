@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { PrincipalType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -7,20 +8,17 @@ const DAY = 24 * 60 * 60 * 1000;
 export class SessionService {
   constructor(private prisma: PrismaService) {}
 
-  create(internalUserId: string, remember: boolean) {
+  create(principalType: PrincipalType, principalId: string, remember: boolean) {
     const ttl = remember ? 7 * DAY : DAY;
     return this.prisma.session.create({
-      data: { internalUserId, remember, expiresAt: new Date(Date.now() + ttl) },
+      data: { principalType, principalId, remember, expiresAt: new Date(Date.now() + ttl) },
     });
   }
 
   async resolve(sessionId: string) {
-    const s = await this.prisma.session.findUnique({
-      where: { id: sessionId },
-      include: { internalUser: true },
-    });
+    const s = await this.prisma.session.findUnique({ where: { id: sessionId } });
     if (!s || s.expiresAt.getTime() < Date.now()) return null;
-    return { user: s.internalUser };
+    return { principalType: s.principalType, principalId: s.principalId };
   }
 
   async destroy(sessionId: string) {
