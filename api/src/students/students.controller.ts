@@ -7,6 +7,7 @@ import { RegisterStudentDto } from './dto/register-student.dto';
 import { StudentLoginDto } from './dto/student-login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ResetRequestDto } from './dto/reset-request.dto';
+import { ResetConfirmDto } from './dto/reset-confirm.dto';
 import { StudentGuard } from './student.guard';
 import { CurrentStudent } from './current-student.decorator';
 import { isPngOrJpeg } from './image-signature';
@@ -47,6 +48,12 @@ export class StudentsController {
   @HttpCode(201)
   async requestReset(@Body() dto: ResetRequestDto) {
     await this.students.requestReset(dto.correo);
+    return { ok: true };
+  }
+
+  @Post('password-reset/confirm')
+  async confirmReset(@Body() dto: ResetConfirmDto) {
+    await this.students.confirmReset(dto.token, dto.password);
     return { ok: true };
   }
 

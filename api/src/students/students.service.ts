@@ -163,6 +163,18 @@ export class StudentsService {
     };
   }
 
+  async confirmReset(token: string, password: string): Promise<void> {
+    const pr = await this.prisma.passwordReset.findUnique({ where: { token } });
+    if (!pr || pr.used || pr.expiresAt.getTime() < Date.now()) {
+      throw new BadRequestException('Token inválido o expirado');
+    }
+    const passwordHash = await this.passwords.hash(password);
+    await this.prisma.$transaction([
+      this.prisma.student.update({ where: { id: pr.studentId }, data: { passwordHash } }),
+      this.prisma.passwordReset.update({ where: { id: pr.id }, data: { used: true } }),
+    ]);
+  }
+
   async requestReset(correo: string): Promise<void> {
     const student = await this.prisma.student.findUnique({ where: { correo } });
     if (!student) return;
