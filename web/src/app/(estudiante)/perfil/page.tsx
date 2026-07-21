@@ -16,6 +16,8 @@ export default function PerfilPage() {
   const [telefono, setTelefono] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     api('/students/me/profile').then(async (r) => {
@@ -28,14 +30,26 @@ export default function PerfilPage() {
   }, [router]);
 
   function toggle(id: string) {
+    setSaved(false);
+    setSaveError('');
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   }
   async function save() {
+    if (saving) return;
     setSaved(false);
-    const res = await api('/students/me/profile', {
-      method: 'PATCH', body: JSON.stringify({ telefono, interestIds: selected }),
-    });
-    if (res.ok) { setProfile(await res.json()); setSaved(true); }
+    setSaveError('');
+    setSaving(true);
+    try {
+      const res = await api('/students/me/profile', {
+        method: 'PATCH', body: JSON.stringify({ telefono, interestIds: selected }),
+      });
+      if (res.ok) { setProfile(await res.json()); setSaved(true); }
+      else { setSaveError('Error al guardar. Inténtalo de nuevo.'); }
+    } catch {
+      setSaveError('Error de red. Verifica tu conexión.');
+    } finally {
+      setSaving(false);
+    }
   }
   async function logout() {
     await api('/students/logout', { method: 'POST' });
@@ -53,7 +67,7 @@ export default function PerfilPage() {
       <div>
         <label className="text-sm font-medium">Teléfono</label>
         <input className="mt-1 w-full rounded border p-2" value={telefono}
-          onChange={(e) => setTelefono(e.target.value)} />
+          onChange={(e) => { setSaved(false); setSaveError(''); setTelefono(e.target.value); }} />
       </div>
       <div>
         <p className="mb-1 text-sm font-medium">Intereses</p>
@@ -67,8 +81,11 @@ export default function PerfilPage() {
         </div>
       </div>
       {saved && <p className="text-sm text-green-600">Guardado.</p>}
+      {saveError && <p className="text-sm text-red-600">{saveError}</p>}
       <div className="flex gap-2">
-        <button className="rounded bg-black px-4 py-2 text-white" onClick={save}>Guardar</button>
+        <button className="rounded bg-black px-4 py-2 text-white disabled:opacity-50" onClick={save} disabled={saving}>
+          {saving ? 'Guardando…' : 'Guardar'}
+        </button>
         <button className="rounded bg-gray-200 px-4 py-2" onClick={logout}>Cerrar sesión</button>
       </div>
     </main>
