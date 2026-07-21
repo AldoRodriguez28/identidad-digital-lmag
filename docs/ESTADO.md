@@ -1,10 +1,16 @@
 # Estado del proyecto — para continuar
 
-> Última actualización: 2026-07-21. HEAD: `f128b08`. Rama: `master` (sin remoto).
+> Última actualización: 2026-07-21. HEAD: `14448fa`. Rama: `master` (sin remoto).
 
 ## Dónde estamos
 
-**Plan 01 (Fundamentos + Auth) y Plan 02 (Estudiante: registro/auth/perfil): COMPLETOS y verificados.** 29 commits en `master`. Suites: unit 16/16, e2e 20/20.
+**Planes 01 (Fundamentos+Auth), 02 (Estudiante) y 03 (Credencial/INE/reset): COMPLETOS y verificados.** 43 commits en `master`. Suites: unit 21/21, e2e 33/33 (suite serializada con `maxWorkers:1`).
+
+### Plan 03 (nuevo) — entregado:
+- `StorageService` (adaptador local, R2-ready) + subida de INE `POST /students/me/ine` (multipart, valida magic bytes + ≤5MB, `StudentGuard`) — solo almacena, sin descarga pública.
+- Credencial pública `GET /c/:token` (token opaco, expone SOLO nombre/nivel/edad/escolaridad/colonia/intereses/redes) + página `/c/[token]`.
+- `EmailService` (dev/consola, Resend-ready) + reset de contraseña sin enumeración, tokens single-use + expiración 1h + cierre atómico; páginas `/recuperar` y `/recuperar/[token]`.
+- **RELEASE-BLOCKER (no de merge):** antes de producción con INE real, activar cifrado en reposo + restricción R2 (spec §7, LGPDPPSO).
 
 ### Plan 02 (nuevo) — entregado:
 - **Sesión de servidor polimórfica** (`internal_user | student`): admin y estudiante comparten cookie `idsid`, separados por `principalType` (probado: cookie de un principal no accede al endpoint del otro → 401).
@@ -49,14 +55,17 @@ Verificación real (no solo build):
 - Cobertura e2e `/interests`: asertar orden y campos exactos.
 - Definir hosting (Railway vs VPS) antes del primer deploy.
 
-## Próximo paso: Plan 03 (escrito)
+## Próximo paso: Plan 04 (escrito)
 
-**Plan 03 — Credencial digital pública + INE (storage) + reset de contraseña (email):**
-- Página pública de credencial `GET /c/{credentialToken}` (token no adivinable; expone solo nombre, nivel, edad, escolaridad, colonia, intereses, redes — NUNCA correo/CURP/INE/password).
-- Subida de INE frente/reverso (multipart) vía `StorageService` (adaptador local en dev, R2-ready) — sin OCR.
-- Recuperación de contraseña por email vía `EmailService` (transporte dev/log, Resend-ready): modelo `PasswordReset`, request + confirm.
+**Plan 04 — Comercios / beneficios:**
+- 4º rol `commerce` (sesión polimórfica extendida a `internal_user|student|commerce`).
+- Modelos `Commerce` y `BenefitUsage`; auth de comercio (`CommerceGuard`, login/me).
+- `POST /commerce/validate` {credentialToken}: el comercio escanea el QR de la credencial del joven → valida, registra `BenefitUsage`, devuelve nivel + % descuento.
+- `GET /benefits` (directorio público de comercios afiliados).
+- Frontend: QR en la credencial, directorio `/beneficios`, login e interfaz de escaneo del comercio.
+- Alta de comercios: seed dev por ahora (CRUD admin llega en Plan 05).
 
-Plan: `docs/superpowers/plans/2026-07-21-03-credencial-ine-reset.md`. Ejecutar con `subagent-driven-development`.
+Plan: `docs/superpowers/plans/2026-07-21-04-comercios-beneficios.md`. Ejecutar con `subagent-driven-development`.
 
 ## Referencias
 - Spec MVP: `docs/superpowers/specs/2026-07-20-mvp-identidad-digital-design.md`
