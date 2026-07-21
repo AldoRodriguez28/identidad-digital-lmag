@@ -1,10 +1,11 @@
-import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { Prisma, Student } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordService } from '../auth/password.service';
 import { SessionService } from '../auth/session.service';
 import { StorageService } from '../storage/storage.service';
+import { edadFrom } from './edad';
 import { RegisterStudentDto } from './dto/register-student.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
@@ -141,5 +142,22 @@ export class StudentsService {
     const ineReverso = await this.storage.put(reverso, reversoType);
     await this.prisma.student.update({ where: { id: studentId }, data: { ineFrente, ineReverso } });
     return { ok: true as const };
+  }
+
+  async getCredentialByToken(token: string) {
+    const s = await this.prisma.student.findUnique({
+      where: { credentialToken: token },
+      include: { interests: { include: { interest: { select: { nombre: true } } } } },
+    });
+    if (!s) throw new NotFoundException();
+    return {
+      nombreCompleto: s.nombreCompleto,
+      nivel: s.nivel,
+      edad: edadFrom(s.fechaNacimiento),
+      escolaridad: s.escolaridad,
+      colonia: s.colonia,
+      intereses: s.interests.map((si) => si.interest.nombre),
+      redes: { facebook: s.facebook, instagram: s.instagram, tiktok: s.tiktok, whatsapp: s.whatsapp },
+    };
   }
 }
