@@ -13,12 +13,16 @@ export default function LoginPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    const res = await api('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password, remember }),
-    });
-    if (res.ok) router.push('/panel');
-    else setError('Credenciales inválidas');
+    try {
+      const res = await api('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password, remember }),
+      });
+      if (res.ok) router.push('/panel');
+      else setError('Credenciales inválidas');
+    } catch {
+      setError('No se pudo conectar con el servidor. Intenta de nuevo.');
+    }
   }
 
   return (
