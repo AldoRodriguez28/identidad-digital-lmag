@@ -59,4 +59,22 @@ describe('Students profile', () => {
     const res = await request(app.getHttpServer()).patch('/students/me/profile').send({ telefono: '1' });
     expect(res.status).toBe(401);
   });
+
+  it('PATCH con interestId inexistente -> 400 y los intereses previos NO se borran', async () => {
+    // Primero establecemos un interés conocido válido
+    const setupRes = await request(app.getHttpServer()).patch('/students/me/profile').set('Cookie', cookie)
+      .send({ interestIds: [interestId] });
+    expect(setupRes.status).toBe(200);
+    expect(setupRes.body.interests.map((i: any) => i.id)).toContain(interestId);
+
+    // Intentamos PATCH con un interestId inexistente -> debe fallar con 400
+    const badRes = await request(app.getHttpServer()).patch('/students/me/profile').set('Cookie', cookie)
+      .send({ interestIds: ['no-existe-uuid-00000000'] });
+    expect(badRes.status).toBe(400);
+
+    // Verificamos que los intereses previos siguen intactos (transacción protegió el estado)
+    const profileRes = await request(app.getHttpServer()).get('/students/me/profile').set('Cookie', cookie);
+    expect(profileRes.status).toBe(200);
+    expect(profileRes.body.interests.map((i: any) => i.id)).toContain(interestId);
+  });
 });

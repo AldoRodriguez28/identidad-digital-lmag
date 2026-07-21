@@ -56,4 +56,23 @@ describe('Students register', () => {
     const res = await request(app.getHttpServer()).post('/students/register').send(bad);
     expect(res.status).toBe(400);
   });
+
+  it('CURP duplicado -> 409', async () => {
+    const n = Date.now();
+    const sharedCurp = `CURPDUPE${n}`;
+    const first = await request(app.getHttpServer()).post('/students/register')
+      .send(payload({ curp: sharedCurp, correo: `first${n}@t.com` }));
+    expect(first.status).toBe(201);
+    created.push(first.body.id);
+
+    const second = await request(app.getHttpServer()).post('/students/register')
+      .send(payload({ curp: sharedCurp, correo: `second${n}@t.com` }));
+    expect(second.status).toBe(409);
+  });
+
+  it('interestId inexistente -> 400', async () => {
+    const res = await request(app.getHttpServer()).post('/students/register')
+      .send(payload({ interestIds: ['no-existe-uuid-00000000'] }));
+    expect(res.status).toBe(400);
+  });
 });

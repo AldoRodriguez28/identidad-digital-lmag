@@ -1,6 +1,6 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
-import { Student } from '@prisma/client';
+import { Prisma, Student } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordService } from '../auth/password.service';
 import { SessionService } from '../auth/session.service';
@@ -16,6 +16,18 @@ export type StudentPublicView = {
 export class StudentsService {
   constructor(private prisma: PrismaService, private passwords: PasswordService, private sessions: SessionService) {}
 
+  private async assertInterestsExist(ids: string[]): Promise<void> {
+    if (!ids.length) return;
+    const uniqueIds = [...new Set(ids)];
+    const found = await this.prisma.interest.findMany({
+      where: { id: { in: uniqueIds } },
+      select: { id: true },
+    });
+    if (found.length !== uniqueIds.length) {
+      throw new BadRequestException('Uno o más intereses no existen');
+    }
+  }
+
   toPublicView(s: Student): StudentPublicView {
     return {
       id: s.id, nombreCompleto: s.nombreCompleto, correo: s.correo,
@@ -30,22 +42,33 @@ export class StudentsService {
     });
     if (existing) throw new ConflictException('Correo o CURP ya registrado');
 
+    if (dto.interestIds?.length) {
+      await this.assertInterestsExist(dto.interestIds);
+    }
+
     const passwordHash = await this.passwords.hash(dto.password);
     const credentialToken = randomBytes(16).toString('base64url');
     const { password, interestIds, fechaNacimiento, ...rest } = dto;
 
-    const student = await this.prisma.student.create({
-      data: {
-        ...rest,
-        fechaNacimiento: new Date(fechaNacimiento),
-        passwordHash,
-        credentialToken,
-        interests: interestIds?.length
-          ? { create: interestIds.map((interestId) => ({ interestId })) }
-          : undefined,
-      },
-    });
-    return this.toPublicView(student);
+    try {
+      const student = await this.prisma.student.create({
+        data: {
+          ...rest,
+          fechaNacimiento: new Date(fechaNacimiento),
+          passwordHash,
+          credentialToken,
+          interests: interestIds?.length
+            ? { create: interestIds.map((interestId) => ({ interestId })) }
+            : undefined,
+        },
+      });
+      return this.toPublicView(student);
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        throw new ConflictException('Correo o CURP ya registrado');
+      }
+      throw err;
+    }
   }
 
   async login(correo: string, password: string, remember: boolean) {
@@ -81,15 +104,23 @@ export class StudentsService {
 
   async updateProfile(studentId: string, dto: UpdateProfileDto) {
     const { interestIds, ...fields } = dto;
-    await this.prisma.student.update({ where: { id: studentId }, data: fields });
-    if (interestIds) {
-      await this.prisma.studentInterest.deleteMany({ where: { studentId } });
-      if (interestIds.length) {
-        await this.prisma.studentInterest.createMany({
-          data: interestIds.map((interestId) => ({ studentId, interestId })),
-        });
-      }
+
+    if (interestIds?.length) {
+      await this.assertInterestsExist(interestIds);
     }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.student.update({ where: { id: studentId }, data: fields });
+      if (interestIds) {
+        await tx.studentInterest.deleteMany({ where: { studentId } });
+        if (interestIds.length) {
+          await tx.studentInterest.createMany({
+            data: interestIds.map((interestId) => ({ studentId, interestId })),
+          });
+        }
+      }
+    });
+
     return this.buildProfile(studentId);
   }
 }
