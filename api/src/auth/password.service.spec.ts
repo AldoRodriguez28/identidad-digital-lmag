@@ -7,6 +7,7 @@ describe('PasswordService', () => {
     const h = await svc.hash('secreto123');
     expect(h).not.toBe('secreto123');
     expect(h.length).toBeGreaterThan(20);
+    expect(h).toMatch(/^\$argon2id\$/);
   });
 
   it('verify true para la contraseña correcta y false para la incorrecta', async () => {

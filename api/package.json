@@ -24,8 +24,8 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@prisma/client": "^6.19.3",
-    "argon2": "^0.45.0",
     "cookie-parser": "^1.4.7",
+    "hash-wasm": "^4.12.0",
     "nanoid": "^5.1.16",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
