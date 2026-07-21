@@ -22,6 +22,7 @@ describe('Password reset request', () => {
       escolaridad: 'Uni', correo, telefono: '5', calle: 'c', colonia: 'x',
       codigoPostal: '91000', numExt: '1', password: 'secreto123',
     });
+    expect(reg.status).toBe(201);
     ids.push(reg.body.id);
   });
   afterAll(async () => {
@@ -30,14 +31,14 @@ describe('Password reset request', () => {
     await app.close();
   });
 
-  it('correo existente -> 200 y crea un PasswordReset', async () => {
+  it('correo existente -> 201 y crea un PasswordReset', async () => {
     const res = await request(app.getHttpServer()).post('/students/password-reset/request').send({ correo });
     expect(res.status).toBe(201);
     const count = await prisma.passwordReset.count({ where: { studentId: ids[0] } });
     expect(count).toBe(1);
   });
 
-  it('correo inexistente -> 200 y NO crea nada (no filtra)', async () => {
+  it('correo inexistente -> 201 y NO crea nada (no filtra)', async () => {
     const res = await request(app.getHttpServer()).post('/students/password-reset/request')
       .send({ correo: 'nadie@t.com' });
     expect(res.status).toBe(201);

@@ -44,6 +44,7 @@ export class StudentsController {
   }
 
   @Post('password-reset/request')
+  @HttpCode(201)
   async requestReset(@Body() dto: ResetRequestDto) {
     await this.students.requestReset(dto.correo);
     return { ok: true };

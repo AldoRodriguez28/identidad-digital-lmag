@@ -166,11 +166,22 @@ export class StudentsService {
   async requestReset(correo: string): Promise<void> {
     const student = await this.prisma.student.findUnique({ where: { correo } });
     if (!student) return;
+    // Invalidate any prior unused tokens so only one active token exists per student
+    await this.prisma.passwordReset.updateMany({
+      where: { studentId: student.id, used: false },
+      data: { used: true },
+    });
     const token = randomBytes(24).toString('base64url');
     await this.prisma.passwordReset.create({
       data: { studentId: student.id, token, expiresAt: new Date(Date.now() + 60 * 60 * 1000) },
     });
     const link = `${process.env.WEB_URL ?? 'http://localhost:3000'}/recuperar/${token}`;
-    await this.email.send(correo, 'Recupera tu contraseña', `Abre este enlace para restablecerla: ${link}`);
+    try {
+      await this.email.send(correo, 'Recupera tu contraseña', `Abre este enlace para restablecerla: ${link}`);
+    } catch (err) {
+      // Email provider failure must not leak information about account existence
+      // or break the always-201 contract — log and swallow
+      console.error('[requestReset] Email send failed:', err);
+    }
   }
 }
