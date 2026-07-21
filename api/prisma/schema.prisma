@@ -37,3 +37,55 @@ model Session {
 
   @@index([principalType, principalId])
 }
+
+enum Nivel {
+  bronce
+  plata
+  oro
+  diamante
+}
+
+model Student {
+  id                     String   @id @default(cuid())
+  nombreCompleto         String
+  fechaNacimiento        DateTime
+  curp                   String   @unique
+  sexo                   String
+  escolaridad            String
+  anioVigenciaCredencial Int?
+  correo                 String   @unique
+  telefono               String
+  calle                  String
+  colonia                String
+  codigoPostal           String
+  numExt                 String
+  numInt                 String?
+  entreCalles            String?
+  facebook               String?
+  instagram              String?
+  tiktok                 String?
+  whatsapp               String?
+  ineFrente              String?
+  ineReverso             String?
+  nivel                  Nivel    @default(bronce)
+  puntosAcumulados       Int      @default(0)
+  credentialToken        String   @unique
+  passwordHash           String
+  createdAt              DateTime @default(now())
+  interests              StudentInterest[]
+}
+
+model Interest {
+  id       String            @id @default(cuid())
+  nombre   String            @unique
+  students StudentInterest[]
+}
+
+model StudentInterest {
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId  String
+  interest   Interest @relation(fields: [interestId], references: [id], onDelete: Cascade)
+  interestId String
+
+  @@id([studentId, interestId])
+}

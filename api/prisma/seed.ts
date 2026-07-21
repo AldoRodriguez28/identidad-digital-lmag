@@ -26,6 +26,12 @@ async function main() {
   });
 
   console.log(`Seed admin listo: ${email}`);
+
+  const intereses = ['Deporte', 'Música', 'Arte', 'Tecnología', 'Emprendimiento', 'Danza', 'Lectura', 'Cine'];
+  for (const nombre of intereses) {
+    await prisma.interest.upsert({ where: { nombre }, update: {}, create: { nombre } });
+  }
+  console.log(`Seed intereses: ${intereses.length}`);
 }
 
 main().finally(() => prisma.$disconnect());
