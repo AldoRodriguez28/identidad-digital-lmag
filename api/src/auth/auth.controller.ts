@@ -28,7 +28,7 @@ export class AuthController {
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const sid = req.cookies?.[COOKIE];
     if (sid) await this.auth.logout(sid);
-    res.clearCookie(COOKIE);
+    res.clearCookie(COOKIE, { httpOnly: true, sameSite: 'lax' });
     return { ok: true };
   }
 

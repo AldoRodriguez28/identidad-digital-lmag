@@ -10,6 +10,7 @@ describe('Auth', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   const email = `admin${Date.now()}@t.com`;
+  const inactiveEmail = `inactive${Date.now()}@t.com`;
 
   beforeAll(async () => {
     const mod = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -21,10 +22,19 @@ describe('Auth', () => {
     await prisma.internalUser.create({
       data: { email, passwordHash: await pass.hash('secreto123'), nombre: 'Admin', rol: 'admin' },
     });
+    await prisma.internalUser.create({
+      data: {
+        email: inactiveEmail,
+        passwordHash: await pass.hash('secreto123'),
+        nombre: 'Inactivo',
+        rol: 'admin',
+        activo: false,
+      },
+    });
   });
   afterAll(async () => {
     await prisma.session.deleteMany({});
-    await prisma.internalUser.deleteMany({ where: { email } });
+    await prisma.internalUser.deleteMany({ where: { email: { in: [email, inactiveEmail] } } });
     await app.close();
   });
 
@@ -39,13 +49,20 @@ describe('Auth', () => {
       .post('/auth/login').send({ email, password: 'secreto123', remember: true });
     expect(login.status).toBe(201);
     expect(login.body.rol).toBe('admin');
+    expect(login.body.passwordHash).toBeUndefined();
     const cookie = login.headers['set-cookie'];
     expect(cookie).toBeDefined();
 
     const me = await request(app.getHttpServer()).get('/auth/me').set('Cookie', cookie);
     expect(me.status).toBe(200);
-    expect(me.body.email === undefined || typeof me.body.rol === 'string').toBe(true);
     expect(me.body.rol).toBe('admin');
+    expect(me.body.passwordHash).toBeUndefined();
+  });
+
+  it('login con cuenta inactiva (password correcto) -> 401', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/login').send({ email: inactiveEmail, password: 'secreto123', remember: false });
+    expect(res.status).toBe(401);
   });
 
   it('me sin cookie -> 401', async () => {
