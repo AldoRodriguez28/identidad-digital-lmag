@@ -1,0 +1,9 @@
+{
+  "name": "identidad-digital",
+  "private": true,
+  "workspaces": ["api", "web"],
+  "scripts": {
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down"
+  }
+}
