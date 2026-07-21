@@ -1,8 +1,9 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { Student } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordService } from '../auth/password.service';
+import { SessionService } from '../auth/session.service';
 import { RegisterStudentDto } from './dto/register-student.dto';
 
 export type StudentPublicView = {
@@ -12,7 +13,7 @@ export type StudentPublicView = {
 
 @Injectable()
 export class StudentsService {
-  constructor(private prisma: PrismaService, private passwords: PasswordService) {}
+  constructor(private prisma: PrismaService, private passwords: PasswordService, private sessions: SessionService) {}
 
   toPublicView(s: Student): StudentPublicView {
     return {
@@ -44,5 +45,18 @@ export class StudentsService {
       },
     });
     return this.toPublicView(student);
+  }
+
+  async login(correo: string, password: string, remember: boolean) {
+    const student = await this.prisma.student.findUnique({ where: { correo } });
+    if (!student || !(await this.passwords.verify(student.passwordHash, password))) {
+      throw new UnauthorizedException();
+    }
+    const session = await this.sessions.create('student', student.id, remember);
+    return { session, view: this.toPublicView(student) };
+  }
+
+  logout(sessionId: string) {
+    return this.sessions.destroy(sessionId);
   }
 }
