@@ -6,3 +6,28 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum Rol {
+  admin
+  gestor
+}
+
+model InternalUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  nombre       String
+  rol          Rol
+  activo       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  sessions     Session[]
+}
+
+model Session {
+  id             String       @id @default(cuid())
+  internalUser   InternalUser @relation(fields: [internalUserId], references: [id], onDelete: Cascade)
+  internalUserId String
+  expiresAt      DateTime
+  remember       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+}
