@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import type { Student } from '@prisma/client';
 import { StudentsService } from './students.service';
 import { RegisterStudentDto } from './dto/register-student.dto';
 import { StudentLoginDto } from './dto/student-login.dto';
@@ -34,13 +35,13 @@ export class StudentsController {
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const sid = req.cookies?.[COOKIE];
     if (sid) await this.students.logout(sid);
-    res.clearCookie(COOKIE, { httpOnly: true, sameSite: 'lax' });
+    res.clearCookie(COOKIE, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
     return { ok: true };
   }
 
   @UseGuards(StudentGuard)
   @Get('me')
-  me(@CurrentStudent() student: any) {
+  me(@CurrentStudent() student: Student) {
     return this.students.toPublicView(student);
   }
 }
