@@ -18,6 +18,7 @@ async function main() {
     outputType: 'encoded',
   });
 
+  // Idempotente: si el admin ya existe NO se re-hashea ni cambia su password. Cambiar SEED_ADMIN_PASSWORD y re-seedear NO actualiza la credencial existente (borrar el usuario para rotarla).
   await prisma.internalUser.upsert({
     where: { email },
     update: {},
