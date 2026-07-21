@@ -1,10 +1,20 @@
 # Estado del proyecto — para continuar
 
-> Última actualización: 2026-07-20. HEAD: `6e74af8`. Rama: `master` (sin remoto).
+> Última actualización: 2026-07-21. HEAD: `f128b08`. Rama: `master` (sin remoto).
 
 ## Dónde estamos
 
-**Plan 01 (Fundamentos + Auth): COMPLETO y verificado.** 15 commits en `master`.
+**Plan 01 (Fundamentos + Auth) y Plan 02 (Estudiante: registro/auth/perfil): COMPLETOS y verificados.** 29 commits en `master`. Suites: unit 16/16, e2e 20/20.
+
+### Plan 02 (nuevo) — entregado:
+- **Sesión de servidor polimórfica** (`internal_user | student`): admin y estudiante comparten cookie `idsid`, separados por `principalType` (probado: cookie de un principal no accede al endpoint del otro → 401).
+- Modelos `Student`, `Interest`, `StudentInterest`; `GET /interests`; helper `nivelForPuntos` (aún sin usar — para el sistema de puntos).
+- **Auto-registro público** `POST /students/register` (activo de inmediato, Bronce/0 pts, `credentialToken` no adivinable vía `crypto.randomBytes`, 409 correo/CURP dup, 400 interés inexistente).
+- Auth estudiante (`StudentGuard`, `@CurrentStudent`, login/logout/me) y perfil (`GET`/`PATCH /students/me/profile`, intereses, escritura transaccional).
+- Frontend: `/registro`, `/ingresar`, `/perfil` — flujo completo verificado E2E contra el stack vivo.
+- NOTA: el `credentialToken` NO usa nanoid (su resolución CJS/ESM era ambigua aquí); usa `crypto.randomBytes(16).toString('base64url')`.
+
+### Plan 01 — entregado:
 
 Entregado:
 - Monorepo: `api/` (NestJS + Prisma) + `web/` (Next.js App Router) + Postgres (Docker Compose).
@@ -30,27 +40,25 @@ Verificación real (no solo build):
 - Admin semilla: `admin@identidad.local` / `Cambiar123!` (tras `npm run db:seed`).
 - Nota: existe `web/AGENTS.md` avisando que esta versión de Next.js difiere del conocimiento previo — leer docs de Next en `web/node_modules/next/dist/docs/` antes de tocar APIs específicas de Next.
 
-## Backlog anotado (para el paso de hardening / no bloqueó Plan 01)
+## Backlog anotado (para el paso de hardening / no bloqueó Plan 01-02)
 
-- CORS: hoy `origin:true` (dev). Restringir por env en producción.
+- **CORS: hoy `origin:true` (dev). Restringir por allowlist de env antes del deploy.** (obligatorio pre-producción)
 - Purga de sesiones expiradas (la tabla `Session` crece sin límite).
-- `session.service.spec`: falta assert de TTL cuando `remember=false`.
-- Login web: sin disable de doble-submit; `web/src/lib/api.ts` manda `Content-Type: application/json` incluso en GET.
+- `session.service.spec`: falta assert de TTL cuando `remember=true`.
+- Frontend: sin disable de doble-submit en `/registro`; tipado `any` en handlers `@CurrentStudent`.
+- Cobertura e2e `/interests`: asertar orden y campos exactos.
 - Definir hosting (Railway vs VPS) antes del primer deploy.
 
-## Próximo paso: Plan 02 (aún NO escrito)
+## Próximo paso: Plan 03 (escrito)
 
-**Plan 02 — Auto-registro + Login + Perfil + Credencial del estudiante:**
-- Modelo `Student` (ver spec §4) con `credential_token` no adivinable (nanoid) — ya está `nanoid@5` instalado.
-- Auto-registro público (cuenta activa de inmediato, nivel Bronce, 0 puntos).
-- Login de estudiante + "mantener sesión" + recuperación de contraseña por email (Resend).
-- Perfil (datos editables, intereses, redes).
-- Credencial digital en `/c/{credential_token}` con el fix de seguridad (no CURP plano).
-- INE frente/reverso: subida de archivo simple (SIN OCR en v1) → Cloudflare R2.
+**Plan 03 — Credencial digital pública + INE (storage) + reset de contraseña (email):**
+- Página pública de credencial `GET /c/{credentialToken}` (token no adivinable; expone solo nombre, nivel, edad, escolaridad, colonia, intereses, redes — NUNCA correo/CURP/INE/password).
+- Subida de INE frente/reverso (multipart) vía `StorageService` (adaptador local en dev, R2-ready) — sin OCR.
+- Recuperación de contraseña por email vía `EmailService` (transporte dev/log, Resend-ready): modelo `PasswordReset`, request + confirm.
 
-Al retomar: invocar `superpowers:writing-plans` para escribir el Plan 02 a partir del spec, luego ejecutarlo con `subagent-driven-development` (mismo flujo que hoy).
+Plan: `docs/superpowers/plans/2026-07-21-03-credencial-ine-reset.md`. Ejecutar con `subagent-driven-development`.
 
 ## Referencias
 - Spec MVP: `docs/superpowers/specs/2026-07-20-mvp-identidad-digital-design.md`
-- Plan 01: `docs/superpowers/plans/2026-07-20-01-fundamentos-auth.md`
+- Planes: `docs/superpowers/plans/` (01 fundamentos-auth, 02 estudiante, 03 credencial-ine-reset)
 - Ledger de ejecución (git-ignored, en disco): `.superpowers/sdd/progress.md`
