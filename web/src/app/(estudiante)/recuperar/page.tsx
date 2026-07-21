@@ -5,13 +5,16 @@ import { api } from '../../../lib/api';
 export default function RecuperarPage() {
   const [correo, setCorreo] = useState('');
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    setLoading(true);
     try {
       await api('/students/password-reset/request', { method: 'POST', body: JSON.stringify({ correo }) });
     } catch { /* no revelar errores */ }
     setSent(true);
+    setLoading(false);
   }
 
   if (sent) {
@@ -22,8 +25,10 @@ export default function RecuperarPage() {
       <h1 className="mb-4 text-xl font-semibold">Recuperar contraseña</h1>
       <form onSubmit={submit} className="space-y-3">
         <input className="w-full rounded border p-2" placeholder="Tu correo" type="email"
-          value={correo} onChange={(e) => setCorreo(e.target.value)} />
-        <button className="w-full rounded bg-black p-2 text-white" type="submit">Enviar enlace</button>
+          required value={correo} onChange={(e) => setCorreo(e.target.value)} />
+        <button className="w-full rounded bg-black p-2 text-white" type="submit" disabled={loading}>
+          {loading ? 'Enviando…' : 'Enviar enlace'}
+        </button>
       </form>
     </main>
   );

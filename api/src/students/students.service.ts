@@ -169,10 +169,14 @@ export class StudentsService {
       throw new BadRequestException('Token inválido o expirado');
     }
     const passwordHash = await this.passwords.hash(password);
-    await this.prisma.$transaction([
-      this.prisma.student.update({ where: { id: pr.studentId }, data: { passwordHash } }),
-      this.prisma.passwordReset.update({ where: { id: pr.id }, data: { used: true } }),
-    ]);
+    await this.prisma.$transaction(async (tx) => {
+      const marked = await tx.passwordReset.updateMany({
+        where: { id: pr.id, used: false },
+        data: { used: true },
+      });
+      if (marked.count === 0) throw new BadRequestException('Token inválido o expirado');
+      await tx.student.update({ where: { id: pr.studentId }, data: { passwordHash } });
+    });
   }
 
   async requestReset(correo: string): Promise<void> {
