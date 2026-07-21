@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PasswordService } from '../auth/password.service';
 import { SessionService } from '../auth/session.service';
 import { RegisterStudentDto } from './dto/register-student.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 export type StudentPublicView = {
   id: string; nombreCompleto: string; correo: string;
@@ -58,5 +59,37 @@ export class StudentsService {
 
   logout(sessionId: string) {
     return this.sessions.destroy(sessionId);
+  }
+
+  private async buildProfile(studentId: string) {
+    const s = await this.prisma.student.findUniqueOrThrow({
+      where: { id: studentId },
+      include: { interests: { include: { interest: { select: { id: true, nombre: true } } } } },
+    });
+    return {
+      ...this.toPublicView(s),
+      telefono: s.telefono, escolaridad: s.escolaridad, calle: s.calle, colonia: s.colonia,
+      codigoPostal: s.codigoPostal, numExt: s.numExt, numInt: s.numInt, entreCalles: s.entreCalles,
+      facebook: s.facebook, instagram: s.instagram, tiktok: s.tiktok, whatsapp: s.whatsapp,
+      interests: s.interests.map((si) => si.interest),
+    };
+  }
+
+  getProfile(studentId: string) {
+    return this.buildProfile(studentId);
+  }
+
+  async updateProfile(studentId: string, dto: UpdateProfileDto) {
+    const { interestIds, ...fields } = dto;
+    await this.prisma.student.update({ where: { id: studentId }, data: fields });
+    if (interestIds) {
+      await this.prisma.studentInterest.deleteMany({ where: { studentId } });
+      if (interestIds.length) {
+        await this.prisma.studentInterest.createMany({
+          data: interestIds.map((interestId) => ({ studentId, interestId })),
+        });
+      }
+    }
+    return this.buildProfile(studentId);
   }
 }

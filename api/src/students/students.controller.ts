@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import type { Student } from '@prisma/client';
 import { StudentsService } from './students.service';
 import { RegisterStudentDto } from './dto/register-student.dto';
 import { StudentLoginDto } from './dto/student-login.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { StudentGuard } from './student.guard';
 import { CurrentStudent } from './current-student.decorator';
 
@@ -43,5 +44,17 @@ export class StudentsController {
   @Get('me')
   me(@CurrentStudent() student: Student) {
     return this.students.toPublicView(student);
+  }
+
+  @UseGuards(StudentGuard)
+  @Get('me/profile')
+  getProfile(@CurrentStudent() student: any) {
+    return this.students.getProfile(student.id);
+  }
+
+  @UseGuards(StudentGuard)
+  @Patch('me/profile')
+  updateProfile(@CurrentStudent() student: any, @Body() dto: UpdateProfileDto) {
+    return this.students.updateProfile(student.id, dto);
   }
 }
