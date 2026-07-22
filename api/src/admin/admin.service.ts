@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -27,5 +27,38 @@ export class AdminService {
       count: g._count.interestId,
     }));
     return { usuarios: { estudiantes, internos, comercios }, topIntereses };
+  }
+
+  async listStudents(page = 1, pageSize = 20) {
+    const [items, total] = await Promise.all([
+      this.prisma.student.findMany({
+        select: { id: true, nombreCompleto: true, correo: true, nivel: true, puntosAcumulados: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.student.count(),
+    ]);
+    return { items, total, page, pageSize };
+  }
+
+  async getStudent(id: string) {
+    const s = await this.prisma.student.findUnique({
+      where: { id },
+      include: { interests: { include: { interest: { select: { id: true, nombre: true } } } } },
+    });
+    if (!s) throw new NotFoundException();
+    const { passwordHash, ineFrente, ineReverso, interests, ...rest } = s;
+    return {
+      ...rest,
+      interests: interests.map((si) => si.interest),
+      ine: { frente: !!ineFrente, reverso: !!ineReverso },
+    };
+  }
+
+  async deleteStudent(id: string) {
+    const existing = await this.prisma.student.findUnique({ where: { id }, select: { id: true } });
+    if (!existing) throw new NotFoundException();
+    await this.prisma.student.delete({ where: { id } });
   }
 }
