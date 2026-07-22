@@ -9,11 +9,21 @@ type Dash = {
 
 export default function PanelPage() {
   const [d, setD] = useState<Dash | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    api('/admin/dashboard').then(async (r) => { if (r.ok) setD(await r.json()); }).catch(() => {});
+    api('/admin/dashboard')
+      .then(async (r) => {
+        if (r.ok) {
+          setD(await r.json());
+        } else {
+          setError(true);
+        }
+      })
+      .catch(() => { setError(true); });
   }, []);
 
+  if (error) return <main className="p-6">No se pudo cargar el dashboard.</main>;
   if (!d) return <main className="p-6">Cargando…</main>;
 
   return (
@@ -26,8 +36,8 @@ export default function PanelPage() {
       </div>
       <h2 className="mb-2 mt-6 text-lg font-medium">Top intereses</h2>
       <ul className="space-y-1">
-        {d.topIntereses.map((t) => (
-          <li key={t.nombre} className="flex justify-between rounded border px-3 py-2 text-sm">
+        {(d.topIntereses ?? []).map((t, idx) => (
+          <li key={`${t.nombre}-${idx}`} className="flex justify-between rounded border px-3 py-2 text-sm">
             <span>{t.nombre}</span><span className="text-gray-500">{t.count}</span>
           </li>
         ))}
