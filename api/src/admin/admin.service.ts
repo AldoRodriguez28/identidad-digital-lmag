@@ -1,9 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private storage: StorageService,
+  ) {}
 
   async dashboard() {
     const [estudiantes, internos, comercios, grouped] = await Promise.all([
@@ -88,5 +92,16 @@ export class AdminService {
     const existing = await this.prisma.student.findUnique({ where: { id }, select: { id: true } });
     if (!existing) throw new NotFoundException();
     await this.prisma.student.delete({ where: { id } });
+  }
+
+  async getInePath(id: string, side: string) {
+    if (side !== 'frente' && side !== 'reverso') throw new BadRequestException('side inválido');
+    const s = await this.prisma.student.findUnique({
+      where: { id }, select: { ineFrente: true, ineReverso: true },
+    });
+    const key = side === 'frente' ? s?.ineFrente : s?.ineReverso;
+    if (!key) throw new NotFoundException();
+    const contentType = key.endsWith('.png') ? 'image/png' : key.endsWith('.jpg') ? 'image/jpeg' : 'application/octet-stream';
+    return { path: this.storage.getPath(key), contentType };
   }
 }

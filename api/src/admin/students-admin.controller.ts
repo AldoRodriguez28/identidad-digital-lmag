@@ -1,4 +1,6 @@
-import { Controller, Delete, Get, HttpCode, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Get, HttpCode, NotFoundException, Param, Query, Res, StreamableFile, UseGuards } from '@nestjs/common';
+import { createReadStream, existsSync } from 'fs';
+import type { Response } from 'express';
 import { SessionGuard } from '../auth/session.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -19,6 +21,18 @@ export class StudentsAdminController {
   @Get(':id')
   detail(@Param('id') id: string) {
     return this.admin.getStudent(id);
+  }
+
+  @Get(':id/ine/:side')
+  async ine(
+    @Param('id') id: string,
+    @Param('side') side: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    const { path, contentType } = await this.admin.getInePath(id, side);
+    if (!existsSync(path)) throw new NotFoundException();
+    res.set({ 'Content-Type': contentType });
+    return new StreamableFile(createReadStream(path));
   }
 
   @Delete(':id')
