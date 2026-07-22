@@ -1,10 +1,16 @@
 # Estado del proyecto — para continuar
 
-> Última actualización: 2026-07-21. HEAD: `14448fa`. Rama: `master` (sin remoto).
+> Última actualización: 2026-07-21. HEAD: `22ff4f2`. Rama: `master` (sin remoto).
 
 ## Dónde estamos
 
-**Planes 01 (Fundamentos+Auth), 02 (Estudiante) y 03 (Credencial/INE/reset): COMPLETOS y verificados.** 43 commits en `master`. Suites: unit 21/21, e2e 33/33 (suite serializada con `maxWorkers:1`).
+**Planes 01–04 COMPLETOS y verificados.** Suites: unit 21/21, e2e 43/43 (suite serializada con `maxWorkers:1`).
+
+### Plan 04 (nuevo) — Comercios/beneficios:
+- 4º principal `commerce` (sesión polimórfica `internal_user|student|commerce`), separación estricta probada; modelos `Commerce`/`BenefitUsage`; comercio semilla `comercio@demo.local` / `Comercio123!`.
+- `POST /commerce/validate` (escaneo QR → nombre+nivel del joven + % descuento del comercio autenticado + registra `BenefitUsage`); `GET /benefits` (directorio público).
+- Frontend: QR en credencial (`qrcode.react`), `/beneficios`, login comercio + `/comercio/validar` (cámara `html5-qrcode` + manual).
+- Backlog: dedupe/rate-limit de `BenefitUsage`. El uso de beneficio NO da puntos (v1).
 
 ### Plan 03 (nuevo) — entregado:
 - `StorageService` (adaptador local, R2-ready) + subida de INE `POST /students/me/ine` (multipart, valida magic bytes + ≤5MB, `StudentGuard`) — solo almacena, sin descarga pública.
@@ -55,17 +61,20 @@ Verificación real (no solo build):
 - Cobertura e2e `/interests`: asertar orden y campos exactos.
 - Definir hosting (Railway vs VPS) antes del primer deploy.
 
-## Próximo paso: Plan 04 (escrito)
+## Próximo paso: Plan 05 (escrito)
 
-**Plan 04 — Comercios / beneficios:**
-- 4º rol `commerce` (sesión polimórfica extendida a `internal_user|student|commerce`).
-- Modelos `Commerce` y `BenefitUsage`; auth de comercio (`CommerceGuard`, login/me).
-- `POST /commerce/validate` {credentialToken}: el comercio escanea el QR de la credencial del joven → valida, registra `BenefitUsage`, devuelve nivel + % descuento.
-- `GET /benefits` (directorio público de comercios afiliados).
-- Frontend: QR en la credencial, directorio `/beneficios`, login e interfaz de escaneo del comercio.
-- Alta de comercios: seed dev por ahora (CRUD admin llega en Plan 05).
+**Plan 05 — Panel admin (base): shell + dashboard + estudiantes (con INE) + intereses CRUD.**
+Endpoints bajo `/admin/*` protegidos por `SessionGuard` + `RolesGuard('admin','gestor')`:
+- Dashboard (conteos por tipo de usuario + top intereses).
+- Estudiantes: lista paginada + detalle + baja; **vista segura de INE** (`GET /admin/students/:id/ine/:side`, solo admin/gestor — cierra parte del release-blocker de acceso a INE del Plan 03).
+- Intereses CRUD.
+- Frontend: shell del panel con nav por rol + páginas.
 
-Plan: `docs/superpowers/plans/2026-07-21-04-comercios-beneficios.md`. Ejecutar con `subagent-driven-development`.
+El panel se completa en el **Plan 06** (usuarios internos CRUD [solo admin] + comercios CRUD + mi perfil). Eventos/puntos → Plan 07; talleres/vacantes → después; PWA → final.
+
+Plan: `docs/superpowers/plans/2026-07-21-05-panel-admin-base.md`. Ejecutar con `subagent-driven-development`.
+
+> Nota: los módulos estudiante "cursos y talleres" (catálogo) y "bolsa de trabajo" (vacantes) del spec §3.1 aún NO se han construido; se planificarán tras el panel.
 
 ## Referencias
 - Spec MVP: `docs/superpowers/specs/2026-07-20-mvp-identidad-digital-design.md`
