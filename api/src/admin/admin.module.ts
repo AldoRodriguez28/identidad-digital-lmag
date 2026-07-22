@@ -3,10 +3,11 @@ import { AuthModule } from '../auth/auth.module';
 import { AdminService } from './admin.service';
 import { DashboardController } from './dashboard.controller';
 import { StudentsAdminController } from './students-admin.controller';
+import { InterestsAdminController } from './interests-admin.controller';
 
 @Module({
   imports: [AuthModule],
-  controllers: [DashboardController, StudentsAdminController],
+  controllers: [DashboardController, StudentsAdminController, InterestsAdminController],
   providers: [AdminService],
   exports: [AdminService],
 })

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 
@@ -92,6 +92,26 @@ export class AdminService {
     const existing = await this.prisma.student.findUnique({ where: { id }, select: { id: true } });
     if (!existing) throw new NotFoundException();
     await this.prisma.student.delete({ where: { id } });
+  }
+
+  async createInterest(nombre: string) {
+    const dup = await this.prisma.interest.findUnique({ where: { nombre }, select: { id: true } });
+    if (dup) throw new ConflictException('El interés ya existe');
+    return this.prisma.interest.create({ data: { nombre }, select: { id: true, nombre: true } });
+  }
+
+  async updateInterest(id: string, nombre: string) {
+    const existing = await this.prisma.interest.findUnique({ where: { id }, select: { id: true } });
+    if (!existing) throw new NotFoundException();
+    const dup = await this.prisma.interest.findUnique({ where: { nombre }, select: { id: true } });
+    if (dup && dup.id !== id) throw new ConflictException('El interés ya existe');
+    return this.prisma.interest.update({ where: { id }, data: { nombre }, select: { id: true, nombre: true } });
+  }
+
+  async deleteInterest(id: string) {
+    const existing = await this.prisma.interest.findUnique({ where: { id }, select: { id: true } });
+    if (!existing) throw new NotFoundException();
+    await this.prisma.interest.delete({ where: { id } });
   }
 
   async getInePath(id: string, side: string) {
