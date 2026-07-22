@@ -1,5 +1,6 @@
 'use client';
 import { use, useEffect, useState } from 'react';
+import { QRCodeCanvas } from 'qrcode.react';
 import { api } from '../../../lib/api';
 
 type Credential = {
@@ -61,6 +62,11 @@ export default function CredencialPage({ params }: { params: Promise<{ token: st
                 </a>
               </div>
             ))}
+          </div>
+        )}
+        {typeof window !== 'undefined' && (
+          <div className="mt-6 flex justify-center">
+            <QRCodeCanvas value={window.location.href} size={160} includeMargin />
           </div>
         )}
       </div>
