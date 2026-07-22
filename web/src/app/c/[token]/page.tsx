@@ -13,6 +13,9 @@ export default function CredencialPage({ params }: { params: Promise<{ token: st
   const [cred, setCred] = useState<Credential | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [networkError, setNetworkError] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     api(`/c/${token}`).then(async (r) => {
@@ -64,7 +67,7 @@ export default function CredencialPage({ params }: { params: Promise<{ token: st
             ))}
           </div>
         )}
-        {typeof window !== 'undefined' && (
+        {mounted && (
           <div className="mt-6 flex justify-center">
             <QRCodeCanvas value={window.location.href} size={160} includeMargin />
           </div>

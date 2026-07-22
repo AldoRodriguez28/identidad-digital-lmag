@@ -7,12 +7,13 @@ type Benefit = { id: string; nombre: string; descripcion?: string; porcentajeDes
 export default function BeneficiosPage() {
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     api('/benefits').then(async (r) => {
       if (r.ok) setBenefits(await r.json());
       else setError(true);
-    }).catch(() => setError(true));
+    }).catch(() => setError(true)).finally(() => setLoading(false));
   }, []);
 
   if (error) return <main className="p-6">No se pudieron cargar los beneficios.</main>;
@@ -20,7 +21,9 @@ export default function BeneficiosPage() {
   return (
     <main className="mx-auto mt-10 max-w-lg p-6">
       <h1 className="mb-4 text-xl font-semibold">Beneficios</h1>
-      {benefits.length === 0 ? (
+      {loading ? (
+        <p className="text-sm text-gray-500">Cargando…</p>
+      ) : benefits.length === 0 ? (
         <p className="text-sm text-gray-500">Aún no hay comercios afiliados.</p>
       ) : (
         <ul className="space-y-3">
