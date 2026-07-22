@@ -1,5 +1,5 @@
 'use client';
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../../../../lib/api';
 
@@ -10,16 +10,22 @@ type Detail = {
 };
 
 function IneImage({ id, side }: { id: string; side: 'frente' | 'reverso' }) {
+  const urlRef = useRef<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
-    let revoked = false;
+    let cancelled = false;
     api(`/admin/students/${id}/ine/${side}`).then(async (r) => {
       if (!r.ok) return;
       const blob = await r.blob();
-      if (!revoked) setUrl(URL.createObjectURL(blob));
+      if (cancelled) return;
+      const objectUrl = URL.createObjectURL(blob);
+      urlRef.current = objectUrl;
+      setUrl(objectUrl);
     }).catch(() => {});
-    return () => { revoked = true; if (url) URL.revokeObjectURL(url); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+      if (urlRef.current) { URL.revokeObjectURL(urlRef.current); urlRef.current = null; }
+    };
   }, [id, side]);
   if (!url) return <div className="h-40 w-64 animate-pulse rounded bg-gray-100" />;
   return <img src={url} alt={`INE ${side}`} className="h-40 w-64 rounded border object-contain" />;
@@ -29,6 +35,7 @@ export default function DetalleEstudiantePage({ params }: { params: Promise<{ id
   const { id } = use(params);
   const router = useRouter();
   const [d, setD] = useState<Detail | null>(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     api(`/admin/students/${id}`).then(async (r) => {
@@ -39,8 +46,13 @@ export default function DetalleEstudiantePage({ params }: { params: Promise<{ id
 
   async function baja() {
     if (!confirm('¿Dar de baja a este estudiante? Esta acción no se puede deshacer.')) return;
-    const res = await api(`/admin/students/${id}`, { method: 'DELETE' });
-    if (res.ok) router.push('/panel/estudiantes');
+    try {
+      const res = await api(`/admin/students/${id}`, { method: 'DELETE' });
+      if (res.ok) router.push('/panel/estudiantes');
+      else setError('No se pudo dar de baja.');
+    } catch {
+      setError('No se pudo dar de baja.');
+    }
   }
 
   if (!d) return <main className="p-6">Cargando…</main>;
@@ -66,6 +78,7 @@ export default function DetalleEstudiantePage({ params }: { params: Promise<{ id
         </div>
       </div>
       <button className="rounded bg-red-600 px-4 py-2 text-sm text-white" onClick={baja}>Dar de baja</button>
+      {error && <p className="text-sm text-red-600">{error}</p>}
     </main>
   );
 }
