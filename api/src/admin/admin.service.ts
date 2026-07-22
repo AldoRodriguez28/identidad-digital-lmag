@@ -45,10 +45,38 @@ export class AdminService {
   async getStudent(id: string) {
     const s = await this.prisma.student.findUnique({
       where: { id },
-      include: { interests: { include: { interest: { select: { id: true, nombre: true } } } } },
+      select: {
+        id: true,
+        nombreCompleto: true,
+        fechaNacimiento: true,
+        curp: true,
+        sexo: true,
+        escolaridad: true,
+        anioVigenciaCredencial: true,
+        correo: true,
+        telefono: true,
+        calle: true,
+        colonia: true,
+        codigoPostal: true,
+        numExt: true,
+        numInt: true,
+        entreCalles: true,
+        facebook: true,
+        instagram: true,
+        tiktok: true,
+        whatsapp: true,
+        nivel: true,
+        puntosAcumulados: true,
+        credentialToken: true,
+        createdAt: true,
+        // Only for presence check — not forwarded to caller
+        ineFrente: true,
+        ineReverso: true,
+        interests: { select: { interest: { select: { id: true, nombre: true } } } },
+      },
     });
     if (!s) throw new NotFoundException();
-    const { passwordHash, ineFrente, ineReverso, interests, ...rest } = s;
+    const { ineFrente, ineReverso, interests, ...rest } = s;
     return {
       ...rest,
       interests: interests.map((si) => si.interest),
