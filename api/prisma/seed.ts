@@ -32,6 +32,18 @@ async function main() {
     await prisma.interest.upsert({ where: { nombre }, update: {}, create: { nombre } });
   }
   console.log(`Seed intereses: ${intereses.length}`);
+
+  const comercioEmail = 'comercio@demo.local';
+  const comercioHash = await argon2id({
+    password: 'Comercio123!', salt: randomBytes(16), parallelism: 1,
+    iterations: 3, memorySize: 65536, hashLength: 32, outputType: 'encoded',
+  });
+  await prisma.commerce.upsert({
+    where: { email: comercioEmail },
+    update: {},
+    create: { nombre: 'Cafetería Demo', descripcion: 'Café y postres', porcentajeDescuento: 15, email: comercioEmail, passwordHash: comercioHash },
+  });
+  console.log(`Seed comercio demo: ${comercioEmail}`);
 }
 
 main().finally(() => prisma.$disconnect());

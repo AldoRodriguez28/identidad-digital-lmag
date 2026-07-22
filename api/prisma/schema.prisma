@@ -15,6 +15,7 @@ enum Rol {
 enum PrincipalType {
   internal_user
   student
+  commerce
 }
 
 model InternalUser {
@@ -74,6 +75,7 @@ model Student {
   createdAt              DateTime @default(now())
   interests              StudentInterest[]
   passwordResets         PasswordReset[]
+  benefitUsages          BenefitUsage[]
 }
 
 model PasswordReset {
@@ -99,4 +101,26 @@ model StudentInterest {
   interestId String
 
   @@id([studentId, interestId])
+}
+
+model Commerce {
+  id                  String         @id @default(cuid())
+  nombre              String
+  descripcion         String?
+  porcentajeDescuento Int
+  logo                String?
+  email               String         @unique
+  passwordHash        String
+  activo              Boolean        @default(true)
+  createdAt           DateTime       @default(now())
+  benefitUsages       BenefitUsage[]
+}
+
+model BenefitUsage {
+  id         String   @id @default(cuid())
+  commerce   Commerce @relation(fields: [commerceId], references: [id], onDelete: Cascade)
+  commerceId String
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId  String
+  createdAt  DateTime @default(now())
 }
