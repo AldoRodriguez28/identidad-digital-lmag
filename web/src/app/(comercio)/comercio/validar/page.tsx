@@ -20,7 +20,11 @@ export default function ComercioValidarPage() {
   const [manual, setManual] = useState('');
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState('');
+  const [scanning, setScanning] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  // Prevents double-scan race: set to true as soon as a QR decode fires,
+  // reset in finally after validate() resolves.
+  const busyRef = useRef(false);
 
   useEffect(() => {
     api('/commerce/me').then((r) => {
@@ -45,20 +49,35 @@ export default function ComercioValidarPage() {
 
   async function startScan() {
     setError('');
+    busyRef.current = false;
     const scanner = new Html5Qrcode('qr-reader');
-    scannerRef.current = scanner;
     try {
       await scanner.start(
         { facingMode: 'environment' },
         { fps: 10, qrbox: 250 },
         async (decoded) => {
-          await scanner.stop().catch(() => {});
-          scannerRef.current = null;
-          await validate(decoded);
+          // Guard: ignore subsequent callbacks while a validation is in progress.
+          if (busyRef.current) return;
+          busyRef.current = true;
+          try {
+            await scanner.stop().catch(() => {});
+            scannerRef.current = null;
+            setScanning(false);
+            await validate(decoded);
+          } finally {
+            busyRef.current = false;
+          }
         },
         () => {},
       );
+      // Only assign the ref and mark scanning after start() succeeds.
+      scannerRef.current = scanner;
+      setScanning(true);
     } catch {
+      // start() failed: clean up the scanner instance before bailing out.
+      await scanner.stop().catch(() => {});
+      scannerRef.current = null;
+      setScanning(false);
       setError('No se pudo abrir la cámara. Usa la entrada manual.');
     }
   }
@@ -80,7 +99,13 @@ export default function ComercioValidarPage() {
       </div>
 
       <div id="qr-reader" className="w-full" />
-      <button className="w-full rounded bg-black p-2 text-white" onClick={startScan}>Escanear con cámara</button>
+      <button
+        className="w-full rounded bg-black p-2 text-white disabled:opacity-50"
+        onClick={startScan}
+        disabled={scanning}
+      >
+        Escanear con cámara
+      </button>
 
       <form onSubmit={(e) => { e.preventDefault(); validate(manual); }} className="space-y-2">
         <input className="w-full rounded border p-2" placeholder="…o pega el token / URL de la credencial"
