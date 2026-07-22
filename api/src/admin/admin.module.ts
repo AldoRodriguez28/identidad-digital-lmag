@@ -8,11 +8,13 @@ import { InternalUsersController } from './internal-users.controller';
 import { InternalUsersService } from './internal-users.service';
 import { CommercesAdminController } from './commerces-admin.controller';
 import { CommercesAdminService } from './commerces-admin.service';
+import { ProfileController } from './profile.controller';
+import { ProfileService } from './profile.service';
 
 @Module({
   imports: [AuthModule],
-  controllers: [DashboardController, StudentsAdminController, InterestsAdminController, InternalUsersController, CommercesAdminController],
-  providers: [AdminService, InternalUsersService, CommercesAdminService],
+  controllers: [DashboardController, StudentsAdminController, InterestsAdminController, InternalUsersController, CommercesAdminController, ProfileController],
+  providers: [AdminService, InternalUsersService, CommercesAdminService, ProfileService],
   exports: [AdminService],
 })
 export class AdminModule {}
