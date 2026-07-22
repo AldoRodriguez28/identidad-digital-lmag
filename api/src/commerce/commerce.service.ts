@@ -43,4 +43,12 @@ export class CommerceService {
       porcentajeDescuento,
     };
   }
+
+  listBenefits() {
+    return this.prisma.commerce.findMany({
+      where: { activo: true },
+      select: { id: true, nombre: true, descripcion: true, porcentajeDescuento: true, logo: true },
+      orderBy: { nombre: 'asc' },
+    });
+  }
 }
