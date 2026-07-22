@@ -1,10 +1,18 @@
 # Estado del proyecto — para continuar
 
-> Última actualización: 2026-07-21. HEAD: `22ff4f2`. Rama: `master` (sin remoto).
+> Última actualización: 2026-07-21. HEAD: `26f8452`. Rama: `master` (sin remoto).
+
+## Roadmap (≈10 planes; 01–05 hechos)
+01 Fundamentos✅ · 02 Estudiante✅ · 03 Credencial/INE/reset✅ · 04 Comercios✅ · 05 Panel admin base✅ · **06 Panel admin cuentas (siguiente)** · 07 Puntos+Eventos+check-in · 08 Cursos/talleres+Bolsa de trabajo · 09 PWA · 10 Hardening+despliegue.
 
 ## Dónde estamos
 
-**Planes 01–04 COMPLETOS y verificados.** Suites: unit 21/21, e2e 43/43 (suite serializada con `maxWorkers:1`).
+**Planes 01–05 COMPLETOS y verificados.** Suites: unit 21/21, e2e 58/58 (suite serializada con `maxWorkers:1`).
+
+### Plan 05 (nuevo) — Panel admin base:
+- `/admin/*` con `SessionGuard`+`RolesGuard('admin','gestor')`; dashboard (conteos+top intereses); shell del panel con nav por rol bajo `(admin)/panel/*`.
+- Estudiantes: lista paginada + detalle (`select` explícito, sin passwordHash/keys INE) + baja; **vista segura de INE** `GET /admin/students/:id/ine/:side` (solo admin/gestor, no-store) — cierra el acceso público al INE.
+- CRUD de intereses + página. Verificado E2E con rol admin.
 
 ### Plan 04 (nuevo) — Comercios/beneficios:
 - 4º principal `commerce` (sesión polimórfica `internal_user|student|commerce`), separación estricta probada; modelos `Commerce`/`BenefitUsage`; comercio semilla `comercio@demo.local` / `Comercio123!`.
@@ -61,20 +69,17 @@ Verificación real (no solo build):
 - Cobertura e2e `/interests`: asertar orden y campos exactos.
 - Definir hosting (Railway vs VPS) antes del primer deploy.
 
-## Próximo paso: Plan 05 (escrito)
+## Próximo paso: Plan 06 (escrito)
 
-**Plan 05 — Panel admin (base): shell + dashboard + estudiantes (con INE) + intereses CRUD.**
-Endpoints bajo `/admin/*` protegidos por `SessionGuard` + `RolesGuard('admin','gestor')`:
-- Dashboard (conteos por tipo de usuario + top intereses).
-- Estudiantes: lista paginada + detalle + baja; **vista segura de INE** (`GET /admin/students/:id/ine/:side`, solo admin/gestor — cierra parte del release-blocker de acceso a INE del Plan 03).
-- Intereses CRUD.
-- Frontend: shell del panel con nav por rol + páginas.
+**Plan 06 — Panel admin (cuentas): usuarios internos CRUD (solo admin) + comercios CRUD + mi perfil.**
+- Usuarios internos (admin/gestor): CRUD **solo para rol `admin`** (`@Roles('admin')`) — aquí el gestor recibe 403 (primer caso real de denegación por rol). Sin auto-borrado.
+- Comercios: CRUD (admin/gestor) — alta de cuentas de comercio (cierra el "seed dev" del Plan 04).
+- Mi perfil: editar nombre/email + cambiar contraseña propia.
+- Frontend: páginas `/panel/usuarios` (link solo admin), `/panel/comercios`, `/panel/perfil`; actualizar nav del layout.
 
-El panel se completa en el **Plan 06** (usuarios internos CRUD [solo admin] + comercios CRUD + mi perfil). Eventos/puntos → Plan 07; talleres/vacantes → después; PWA → final.
+Plan: `docs/superpowers/plans/2026-07-21-06-panel-admin-cuentas.md`. Ejecutar con `subagent-driven-development`.
 
-Plan: `docs/superpowers/plans/2026-07-21-05-panel-admin-base.md`. Ejecutar con `subagent-driven-development`.
-
-> Nota: los módulos estudiante "cursos y talleres" (catálogo) y "bolsa de trabajo" (vacantes) del spec §3.1 aún NO se han construido; se planificarán tras el panel.
+> Pendientes tras el panel: Plan 07 puntos+eventos+check-in; Plan 08 cursos/talleres + bolsa de trabajo (spec §3.1, aún sin construir); Plan 09 PWA; Plan 10 hardening+deploy.
 
 ## Referencias
 - Spec MVP: `docs/superpowers/specs/2026-07-20-mvp-identidad-digital-design.md`
