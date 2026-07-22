@@ -49,6 +49,10 @@ describe('Commerce validate', () => {
     // NO debe filtrar datos sensibles del estudiante
     expect(res.body.student.correo).toBeUndefined();
     expect(res.body.student.curp).toBeUndefined();
+    expect(res.body.student.id).toBeUndefined();
+    expect(res.body.student.telefono).toBeUndefined();
+    expect(res.body.student.ineFrente).toBeUndefined();
+    expect(res.body.student.passwordHash).toBeUndefined();
     const count = await prisma.benefitUsage.count({ where: { studentId: studentIds[0] } });
     expect(count).toBe(1);
   });

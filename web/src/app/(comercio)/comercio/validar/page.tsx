@@ -25,12 +25,18 @@ export default function ComercioValidarPage() {
   // Prevents double-scan race: set to true as soon as a QR decode fires,
   // reset in finally after validate() resolves.
   const busyRef = useRef(false);
+  // Guards against setState calls after unmount.
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     api('/commerce/me').then((r) => {
+      if (!mountedRef.current) return;
       if (r.ok) setReady(true);
       else router.push('/comercio/ingresar');
-    }).catch(() => router.push('/comercio/ingresar'));
+    }).catch(() => {
+      if (!mountedRef.current) return;
+      router.push('/comercio/ingresar');
+    });
   }, [router]);
 
   async function validate(rawValue: string) {
@@ -39,10 +45,12 @@ export default function ComercioValidarPage() {
     if (!credentialToken) { setError('Token vacío.'); return; }
     try {
       const res = await api('/commerce/validate', { method: 'POST', body: JSON.stringify({ credentialToken }) });
+      if (!mountedRef.current) return;
       if (res.ok) setResult(await res.json());
       else if (res.status === 404) setError('Credencial no encontrada.');
       else setError('No se pudo validar.');
     } catch {
+      if (!mountedRef.current) return;
       setError('No se pudo conectar con el servidor.');
     }
   }
@@ -82,7 +90,10 @@ export default function ComercioValidarPage() {
     }
   }
 
-  useEffect(() => () => { scannerRef.current?.stop().catch(() => {}); }, []);
+  useEffect(() => () => {
+    mountedRef.current = false;
+    scannerRef.current?.stop().catch(() => {});
+  }, []);
 
   async function logout() {
     await api('/commerce/logout', { method: 'POST' });
