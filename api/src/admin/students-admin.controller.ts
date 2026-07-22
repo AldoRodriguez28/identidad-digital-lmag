@@ -18,11 +18,6 @@ export class StudentsAdminController {
     return this.admin.listStudents(q.page ?? 1, q.pageSize ?? 20);
   }
 
-  @Get(':id')
-  detail(@Param('id') id: string) {
-    return this.admin.getStudent(id);
-  }
-
   @Get(':id/ine/:side')
   async ine(
     @Param('id') id: string,
@@ -31,8 +26,17 @@ export class StudentsAdminController {
   ): Promise<StreamableFile> {
     const { path, contentType } = await this.admin.getInePath(id, side);
     if (!existsSync(path)) throw new NotFoundException();
-    res.set({ 'Content-Type': contentType });
+    res.set({
+      'Content-Type': contentType,
+      'Content-Disposition': 'attachment',
+      'Cache-Control': 'no-store',
+    });
     return new StreamableFile(createReadStream(path));
+  }
+
+  @Get(':id')
+  detail(@Param('id') id: string) {
+    return this.admin.getStudent(id);
   }
 
   @Delete(':id')
