@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { Commerce } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordService } from '../auth/password.service';
@@ -29,5 +29,18 @@ export class CommerceService {
 
   logout(sessionId: string) {
     return this.sessions.destroy(sessionId);
+  }
+
+  async validate(commerceId: string, porcentajeDescuento: number, credentialToken: string) {
+    const student = await this.prisma.student.findUnique({
+      where: { credentialToken },
+      select: { id: true, nombreCompleto: true, nivel: true },
+    });
+    if (!student) throw new NotFoundException('Credencial no encontrada');
+    await this.prisma.benefitUsage.create({ data: { commerceId, studentId: student.id } });
+    return {
+      student: { nombreCompleto: student.nombreCompleto, nivel: student.nivel },
+      porcentajeDescuento,
+    };
   }
 }
