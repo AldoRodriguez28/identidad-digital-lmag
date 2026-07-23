@@ -1,13 +1,19 @@
 # Estado del proyecto — para continuar
 
-> Última actualización: 2026-07-21. HEAD: `26f8452`. Rama: `master` (sin remoto).
+> Última actualización: 2026-07-22. HEAD: `704950f`. Rama: `master` (sin remoto).
 
-## Roadmap (≈10 planes; 01–05 hechos)
-01 Fundamentos✅ · 02 Estudiante✅ · 03 Credencial/INE/reset✅ · 04 Comercios✅ · 05 Panel admin base✅ · **06 Panel admin cuentas (siguiente)** · 07 Puntos+Eventos+check-in · 08 Cursos/talleres+Bolsa de trabajo · 09 PWA · 10 Hardening+despliegue.
+## Roadmap (≈10 planes; 01–06 hechos)
+01 Fundamentos✅ · 02 Estudiante✅ · 03 Credencial/INE/reset✅ · 04 Comercios✅ · 05 Panel admin base✅ · 06 Panel admin cuentas✅ · **07 Puntos+Eventos+check-in (siguiente)** · 08 Cursos/talleres+Bolsa de trabajo · 09 PWA · 10 Hardening+despliegue.
 
 ## Dónde estamos
 
-**Planes 01–05 COMPLETOS y verificados.** Suites: unit 21/21, e2e 58/58 (suite serializada con `maxWorkers:1`).
+**Planes 01–06 COMPLETOS y verificados.** Suites: unit 21/21, e2e 71/71 (suite serializada con `maxWorkers:1`); frontend builds verdes.
+
+### Plan 06 (nuevo) — Panel admin (cuentas):
+- Usuarios internos CRUD **solo admin** (`@Roles('admin')`, gestor→403, sin auto-borrado 400): `api/src/admin/internal-users.*` + `/panel/usuarios` (enlace de nav solo admin).
+- Comercios CRUD (`@Roles('admin','gestor')`): `api/src/admin/commerces-admin.*` + `/panel/comercios` (sustituye el "seed dev" del Plan 04; comercio creado puede hacer `POST /commerce/login`).
+- Mi perfil: `GET/PATCH /admin/me` + `POST /admin/me/password` (`api/src/admin/profile.*`) + `/panel/perfil`. `UpdateProfileDto` solo nombre/email (no permite auto-escalar rol).
+- Revisión final opus: READY TO MERGE, sin correcciones requeridas. Todos los Minor → backlog. Gap fuera de alcance: protección "último admin".
 
 ### Plan 05 (nuevo) — Panel admin base:
 - `/admin/*` con `SessionGuard`+`RolesGuard('admin','gestor')`; dashboard (conteos+top intereses); shell del panel con nav por rol bajo `(admin)/panel/*`.
@@ -69,17 +75,15 @@ Verificación real (no solo build):
 - Cobertura e2e `/interests`: asertar orden y campos exactos.
 - Definir hosting (Railway vs VPS) antes del primer deploy.
 
-## Próximo paso: Plan 06 (escrito)
+## Próximo paso: Plan 07 (por escribir)
 
-**Plan 06 — Panel admin (cuentas): usuarios internos CRUD (solo admin) + comercios CRUD + mi perfil.**
-- Usuarios internos (admin/gestor): CRUD **solo para rol `admin`** (`@Roles('admin')`) — aquí el gestor recibe 403 (primer caso real de denegación por rol). Sin auto-borrado.
-- Comercios: CRUD (admin/gestor) — alta de cuentas de comercio (cierra el "seed dev" del Plan 04).
-- Mi perfil: editar nombre/email + cambiar contraseña propia.
-- Frontend: páginas `/panel/usuarios` (link solo admin), `/panel/comercios`, `/panel/perfil`; actualizar nav del layout.
+**Plan 07 — Puntos/niveles + Eventos + QR check-in.**
+- Sistema de puntos por nivel (Bronce/Plata/Oro/Diamante) usando el helper `nivelForPuntos` (ya existe, sin usar); historial de movimientos; estadísticas.
+- Catálogo de eventos por categoría con puntos por asistencia; QR de check-in (staff escanea al joven en el evento → otorga puntos).
+- Escribir con `writing-plans`, ejecutar con `subagent-driven-development`.
 
-Plan: `docs/superpowers/plans/2026-07-21-06-panel-admin-cuentas.md`. Ejecutar con `subagent-driven-development`.
-
-> Pendientes tras el panel: Plan 07 puntos+eventos+check-in; Plan 08 cursos/talleres + bolsa de trabajo (spec §3.1, aún sin construir); Plan 09 PWA; Plan 10 hardening+deploy.
+> Pendientes tras Plan 07: Plan 08 cursos/talleres + bolsa de trabajo (spec §3.1, aún sin construir); Plan 09 PWA; Plan 10 hardening+deploy.
+> **RELEASE-BLOCKER vigente:** cifrado en reposo del INE + restricción R2 antes de producción con INE real (spec §7, LGPDPPSO).
 
 ## Referencias
 - Spec MVP: `docs/superpowers/specs/2026-07-20-mvp-identidad-digital-design.md`
