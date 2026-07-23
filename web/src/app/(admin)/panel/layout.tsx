@@ -29,6 +29,9 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           <Link href="/panel" className="font-medium">Inicio</Link>
           <Link href="/panel/estudiantes">Estudiantes</Link>
           <Link href="/panel/intereses">Intereses</Link>
+          <Link href="/panel/comercios">Comercios</Link>
+          {me.rol === 'admin' && <Link href="/panel/usuarios">Usuarios</Link>}
+          <Link href="/panel/perfil">Mi perfil</Link>
         </nav>
         <div className="flex items-center gap-3 text-sm">
           <span className="text-gray-600">{me.nombre} ({me.rol})</span>
