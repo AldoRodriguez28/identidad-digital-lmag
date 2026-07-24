@@ -55,7 +55,7 @@
   - `WorkshopsService.listAdmin()` (incluye inactivos), `.listPublic()` (solo activos), `.create(dto)`, `.update(id,dto)` (404), `.remove(id)` (404).
   - `GET /workshops` (público, activos), `GET/POST /admin/workshops`, `PATCH/DELETE /admin/workshops/:id` (admin/gestor; DELETE 204).
 
-- [ ] **Step 1: Añadir enum y modelos al schema**
+- [x] **Step 1: Añadir enum y modelos al schema**
 
 En `api/prisma/schema.prisma`, tras el enum `TipoMovimiento` (o junto a los otros enums), añade:
 ```prisma
@@ -90,12 +90,12 @@ model JobPosting {
 }
 ```
 
-- [ ] **Step 2: Migrar y regenerar el cliente**
+- [x] **Step 2: Migrar y regenerar el cliente**
 
 Run: `cd api && nvm use 20.19.1 && npx prisma migrate dev --name workshops_jobs && npx prisma generate`
 Expected: migración aplicada (crea `Modalidad`, `Workshop`, `JobPosting`), cliente regenerado sin error.
 
-- [ ] **Step 3: Escribir los DTOs de Workshop**
+- [x] **Step 3: Escribir los DTOs de Workshop**
 
 `api/src/workshops/dto/workshop.dto.ts`:
 ```ts
@@ -120,7 +120,7 @@ export class UpdateWorkshopDto {
 }
 ```
 
-- [ ] **Step 4: Escribir el test e2e de Workshops (falla)**
+- [x] **Step 4: Escribir el test e2e de Workshops (falla)**
 
 `api/test/workshops.e2e-spec.ts`:
 ```ts
@@ -198,12 +198,12 @@ describe('Workshops CRUD + public catalog', () => {
 });
 ```
 
-- [ ] **Step 5: Ejecutar y verificar que falla**
+- [x] **Step 5: Ejecutar y verificar que falla**
 
 Run: `cd api && npm run test:e2e -- workshops`
 Expected: FAIL (rutas no existen).
 
-- [ ] **Step 6: Implementar `WorkshopsService`**
+- [x] **Step 6: Implementar `WorkshopsService`**
 
 `api/src/workshops/workshops.service.ts`:
 ```ts
@@ -248,7 +248,7 @@ export class WorkshopsService {
 }
 ```
 
-- [ ] **Step 7: Implementar los controllers y el módulo**
+- [x] **Step 7: Implementar los controllers y el módulo**
 
 `api/src/workshops/workshops-admin.controller.ts`:
 ```ts
@@ -317,12 +317,12 @@ import { WorkshopsModule } from './workshops/workshops.module';
 // ..., EventsModule, WorkshopsModule], controllers: [HealthController] })
 ```
 
-- [ ] **Step 8: Verificar que pasa**
+- [x] **Step 8: Verificar que pasa**
 
 Run: `cd api && npm run test:e2e -- workshops`
 Expected: PASS (3/3).
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add api/prisma api/src/workshops api/src/app.module.ts api/test/workshops.e2e-spec.ts
@@ -351,7 +351,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
   - `JobsService.listAdmin()`, `.listPublic()` (solo activos), `.create(dto)`, `.update(id,dto)` (404), `.remove(id)` (404).
   - `GET /jobs` (público, activos), `GET/POST /admin/jobs`, `PATCH/DELETE /admin/jobs/:id` (admin/gestor; DELETE 204).
 
-- [ ] **Step 1: Escribir los DTOs de Job**
+- [x] **Step 1: Escribir los DTOs de Job**
 
 `api/src/jobs/dto/job.dto.ts`:
 ```ts
@@ -374,7 +374,7 @@ export class UpdateJobDto {
 }
 ```
 
-- [ ] **Step 2: Escribir el test e2e de Jobs (falla)**
+- [x] **Step 2: Escribir el test e2e de Jobs (falla)**
 
 `api/test/jobs.e2e-spec.ts`:
 ```ts
@@ -452,12 +452,12 @@ describe('Job postings CRUD + public catalog', () => {
 });
 ```
 
-- [ ] **Step 3: Ejecutar y verificar que falla**
+- [x] **Step 3: Ejecutar y verificar que falla**
 
 Run: `cd api && npm run test:e2e -- jobs`
 Expected: FAIL (rutas no existen).
 
-- [ ] **Step 4: Implementar `JobsService`**
+- [x] **Step 4: Implementar `JobsService`**
 
 `api/src/jobs/jobs.service.ts`:
 ```ts
@@ -502,7 +502,7 @@ export class JobsService {
 }
 ```
 
-- [ ] **Step 5: Implementar los controllers y el módulo**
+- [x] **Step 5: Implementar los controllers y el módulo**
 
 `api/src/jobs/jobs-admin.controller.ts`:
 ```ts
@@ -571,17 +571,17 @@ import { JobsModule } from './jobs/jobs.module';
 // ..., WorkshopsModule, JobsModule], controllers: [HealthController] })
 ```
 
-- [ ] **Step 6: Verificar que pasa**
+- [x] **Step 6: Verificar que pasa**
 
 Run: `cd api && npm run test:e2e -- jobs`
 Expected: PASS (3/3).
 
-- [ ] **Step 7: Correr toda la suite backend (sin regresiones)**
+- [x] **Step 7: Correr toda la suite backend (sin regresiones)**
 
 Run: `cd api && nvm use 20.19.1 && npm test && npm run test:e2e`
 Expected: unit y e2e verdes (incluye workshops y jobs además de lo anterior).
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add api/src/jobs api/src/app.module.ts api/test/jobs.e2e-spec.ts
@@ -604,7 +604,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
   - `/talleres` — catálogo público; filtro **cliente** por modalidad (todas/presencial/virtual/híbrido); muestra "Gratis" si `precio===0`. No requiere sesión.
   - `/vacantes` — directorio público; filtro **cliente** por texto (matchea puesto/empresa). No requiere sesión.
 
-- [ ] **Step 1: Crear `/talleres`**
+- [x] **Step 1: Crear `/talleres`**
 
 `web/src/app/(estudiante)/talleres/page.tsx`:
 ```tsx
@@ -662,7 +662,7 @@ export default function TalleresPage() {
 }
 ```
 
-- [ ] **Step 2: Crear `/vacantes`**
+- [x] **Step 2: Crear `/vacantes`**
 
 `web/src/app/(estudiante)/vacantes/page.tsx`:
 ```tsx
@@ -711,12 +711,12 @@ export default function VacantesPage() {
 }
 ```
 
-- [ ] **Step 3: Verificar build y rutas**
+- [x] **Step 3: Verificar build y rutas**
 
 Run: `cd web && nvm use 20.19.1 && npm run build`
 Expected: build OK; `/talleres` y `/vacantes` aparecen en la lista de rutas.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add web/src/app
@@ -741,7 +741,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
   - `/panel/talleres` — lista + alta (título, descripción, precio, horario, modalidad) + activar/desactivar + borrar.
   - `/panel/vacantes` — lista + alta (puesto, empresa, requisitos, contacto) + activar/desactivar + borrar.
 
-- [ ] **Step 1: Añadir los enlaces al nav del layout**
+- [x] **Step 1: Añadir los enlaces al nav del layout**
 
 En `web/src/app/(admin)/panel/layout.tsx`, dentro del `<nav>`, tras el enlace de Eventos, añade:
 ```tsx
@@ -749,7 +749,7 @@ En `web/src/app/(admin)/panel/layout.tsx`, dentro del `<nav>`, tras el enlace de
 <Link href="/panel/vacantes">Vacantes</Link>
 ```
 
-- [ ] **Step 2: Crear `/panel/talleres`**
+- [x] **Step 2: Crear `/panel/talleres`**
 
 `web/src/app/(admin)/panel/talleres/page.tsx`:
 ```tsx
@@ -824,7 +824,7 @@ export default function PanelTalleresPage() {
 }
 ```
 
-- [ ] **Step 3: Crear `/panel/vacantes`**
+- [x] **Step 3: Crear `/panel/vacantes`**
 
 `web/src/app/(admin)/panel/vacantes/page.tsx`:
 ```tsx
@@ -892,12 +892,12 @@ export default function PanelVacantesPage() {
 }
 ```
 
-- [ ] **Step 4: Verificar build y rutas**
+- [x] **Step 4: Verificar build y rutas**
 
 Run: `cd web && nvm use 20.19.1 && npm run build`
 Expected: build OK; `/panel/talleres` y `/panel/vacantes` en la lista de rutas.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add web/src/app
@@ -918,25 +918,25 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 **Interfaces:**
 - Consumes: todo lo anterior. Produces: estado documentado y verificado.
 
-- [ ] **Step 1: Correr toda la suite backend + build web**
+- [x] **Step 1: Correr toda la suite backend + build web**
 
 Run: `cd api && nvm use 20.19.1 && npm test && npm run test:e2e`
 Expected: unit y e2e verdes, sin regresiones.
 Run: `cd web && nvm use 20.19.1 && npm run build`
 Expected: build OK con las 4 rutas nuevas (`/talleres`, `/vacantes`, `/panel/talleres`, `/panel/vacantes`).
 
-- [ ] **Step 2: Verificación E2E manual (opcional pero recomendada)**
+- [x] **Step 2: Verificación E2E manual (opcional pero recomendada)**
 
 Con API (`npm run start:dev`, admin semilla) y web arriba, sesión admin: en **Talleres** crea un taller (precio 0 → debe mostrar "Gratis") y otro de pago; desactiva uno. En **/talleres** (sin sesión) verifica que solo aparece el activo y que el filtro por modalidad funciona. Repite el flujo análogo en **Vacantes**/**/vacantes** (filtro por texto).
 Expected: el catálogo público solo muestra activos; los filtros de cliente funcionan.
 
-- [ ] **Step 3: Marcar el plan como completo y actualizar estado**
+- [x] **Step 3: Marcar el plan como completo y actualizar estado**
 
 - Marca todos los `- [ ]` de este plan como `- [x]`.
 - En `docs/ESTADO.md`: mover Plan 08 a completo (roadmap `01–08 hechos`), actualizar HEAD, y poner Plan 09 (PWA) como siguiente.
 - Actualiza la memoria del proyecto (`identidad-digital-estado.md`) y su índice `MEMORY.md`: Planes 01–08 completos; próximo Plan 09 (PWA).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs

@@ -1,13 +1,19 @@
 # Estado del proyecto — para continuar
 
-> Última actualización: 2026-07-23. HEAD: `2968cb7`. Rama: `master` (sin remoto).
+> Última actualización: 2026-07-23. HEAD: `bbf186f`. Rama: `master` (sin remoto).
 
-## Roadmap (≈10 planes; 01–07 hechos)
-01 Fundamentos✅ · 02 Estudiante✅ · 03 Credencial/INE/reset✅ · 04 Comercios✅ · 05 Panel admin base✅ · 06 Panel admin cuentas✅ · 07 Puntos+Eventos+check-in✅ · **08 Cursos/talleres+Bolsa de trabajo (siguiente)** · 09 PWA · 10 Hardening+despliegue.
+## Roadmap (≈10 planes; 01–08 hechos)
+01 Fundamentos✅ · 02 Estudiante✅ · 03 Credencial/INE/reset✅ · 04 Comercios✅ · 05 Panel admin base✅ · 06 Panel admin cuentas✅ · 07 Puntos+Eventos+check-in✅ · 08 Cursos/talleres+Bolsa de trabajo✅ · **09 PWA (siguiente)** · 10 Hardening+despliegue.
 
 ## Dónde estamos
 
-**Planes 01–07 COMPLETOS y verificados.** Suites: unit 24/24, e2e 81/81 (suite serializada con `maxWorkers:1`); frontend builds verdes.
+**Planes 01–08 COMPLETOS y verificados.** Suites: unit 24/24, e2e 87/87 (suite serializada con `maxWorkers:1`); frontend builds verdes.
+
+### Plan 08 (nuevo) — Cursos/talleres + Bolsa de trabajo:
+- Ejecutado con `subagent-driven-development` (4 tareas de código review-clean + revisión de rama READY TO MERGE).
+- **API:** `enum Modalidad` + modelos `Workshop`/`JobPosting` (migración única `workshops_jobs`). Módulos `workshops` y `jobs`, cada uno con CRUD admin (`/admin/workshops*`, `/admin/jobs*`, `@Roles('admin','gestor')`) y catálogo público solo-activos (`GET /workshops`, `GET /jobs`) con `select` que no filtra `activo`/`createdAt`. `precio` Int (0=Gratis); `modalidad` enum `presencial|virtual|hibrido`. Sin puntos, sin inscripción/postulación interna, sin cuentas de acceso.
+- **Web:** estudiante `/talleres` (filtro cliente por modalidad, "Gratis" si precio 0) y `/vacantes` (filtro cliente por texto puesto/empresa); panel `/panel/talleres` y `/panel/vacantes` (CRUD) + enlaces de nav.
+- **Backlog menor** (hacer junto con eventos): badge modalidad "Hibrido" sin acento (CSS capitalize); input búsqueda sin `type="text"`; e2e 404 PATCH/DELETE inexistente; spread `{...dto}` en update; empty-state en listas de panel.
 
 ### Plan 06 (nuevo) — Panel admin (cuentas):
 - Usuarios internos CRUD **solo admin** (`@Roles('admin')`, gestor→403, sin auto-borrado 400): `api/src/admin/internal-users.*` + `/panel/usuarios` (enlace de nav solo admin).
@@ -82,10 +88,10 @@ Verificación real (no solo build):
 - **Web:** `/mis-puntos` (nivel, barra de progreso, eventos asistidos, historial), `/eventos` (catálogo público), `/panel/eventos` (CRUD + activar/desactivar) con enlace en nav, `/panel/eventos/checkin` (escáner `html5-qrcode`, reutiliza patrón anti-doble-escaneo del módulo comercio + entrada manual).
 - **Verificación real:** unit 24/24, e2e 81/81 (`maxWorkers:1`), sin regresiones; `web build` OK con las 4 rutas nuevas. Falta verificación E2E manual con cámara (Task 6 Step 3) contra API+web vivas.
 
-## Próximo paso: Plan 08 (por escribir)
-**Plan 08 — Cursos/talleres (catálogo informativo) + Bolsa de trabajo (directorio de vacantes)**, ambos con CRUD admin y solo-lectura para el estudiante (spec §3.1 #9-10, §4 `Workshop`/`JobPosting`). Escribir con `writing-plans`.
+## Próximo paso: Plan 09 (por escribir)
+**Plan 09 — PWA instalable** (manifest.json + service worker `@ducanh2912/next-pwa` + meta tags específicos de Safari; instalable en iOS/Android). Spec §3.1 #11. Escribir con `writing-plans`.
 
-> Pendientes tras Plan 08: Plan 09 PWA; Plan 10 hardening+deploy.
+> Pendientes tras Plan 09: Plan 10 hardening+deploy.
 > **RELEASE-BLOCKER vigente:** cifrado en reposo del INE + restricción R2 antes de producción con INE real (spec §7, LGPDPPSO).
 
 ## Referencias
