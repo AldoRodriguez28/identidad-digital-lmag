@@ -55,7 +55,7 @@
   - `PointsService.award(tx, studentId, tipo, referencia, puntos)` — recibe un **cliente de transacción Prisma** `tx`; inserta `PointsMovement`, suma puntos, recalcula `nivel`; devuelve el `Student` actualizado. Composable dentro de `prisma.$transaction`.
   - `PointsService.getSummary(studentId)` → `{ puntosAcumulados, nivel, siguiente, puntosParaSiguiente, porcentaje, eventosAsistidos, movimientos: {id, tipo, referencia, puntos, createdAt}[] }`.
 
-- [ ] **Step 1: Añadir enums, modelos y relaciones al schema**
+- [x] **Step 1: Añadir enums, modelos y relaciones al schema**
 
 En `api/prisma/schema.prisma`, tras el enum `Nivel`, añade:
 ```prisma
@@ -115,12 +115,12 @@ En el modelo `Student`, añade al final de la lista de relaciones (junto a `bene
   pointsMovements PointsMovement[]
 ```
 
-- [ ] **Step 2: Migrar y regenerar el cliente**
+- [x] **Step 2: Migrar y regenerar el cliente**
 
 Run: `cd api && nvm use 20.19.1 && npx prisma migrate dev --name events_points && npx prisma generate`
 Expected: migración aplicada, cliente regenerado sin error.
 
-- [ ] **Step 3: Escribir el test unitario de `progresoNivel` (falla)**
+- [x] **Step 3: Escribir el test unitario de `progresoNivel` (falla)**
 
 `api/src/students/nivel-progreso.spec.ts`:
 ```ts
@@ -153,12 +153,12 @@ describe('progresoNivel', () => {
 });
 ```
 
-- [ ] **Step 4: Ejecutar y verificar que falla**
+- [x] **Step 4: Ejecutar y verificar que falla**
 
 Run: `cd api && npm test -- nivel-progreso`
 Expected: FAIL (`progresoNivel` no existe).
 
-- [ ] **Step 5: Implementar `progresoNivel`**
+- [x] **Step 5: Implementar `progresoNivel`**
 
 Añade al final de `api/src/students/nivel.ts`:
 ```ts
@@ -182,12 +182,12 @@ export function progresoNivel(puntos: number): {
 }
 ```
 
-- [ ] **Step 6: Verificar que pasa**
+- [x] **Step 6: Verificar que pasa**
 
 Run: `cd api && npm test -- nivel-progreso`
 Expected: PASS (3/3).
 
-- [ ] **Step 7: Escribir el test e2e de `PointsService` (falla)**
+- [x] **Step 7: Escribir el test e2e de `PointsService` (falla)**
 
 `api/test/points-service.e2e-spec.ts`:
 ```ts
@@ -251,12 +251,12 @@ describe('PointsService', () => {
 });
 ```
 
-- [ ] **Step 8: Ejecutar y verificar que falla**
+- [x] **Step 8: Ejecutar y verificar que falla**
 
 Run: `cd api && npm run test:e2e -- points-service`
 Expected: FAIL (`PointsService` / módulo no existe).
 
-- [ ] **Step 9: Implementar `PointsService` y su módulo**
+- [x] **Step 9: Implementar `PointsService` y su módulo**
 
 `api/src/points/points.service.ts`:
 ```ts
@@ -328,12 +328,12 @@ export class PointsModule {}
 
 En `api/src/app.module.ts`: importa `PointsModule` y añádelo al array `imports` de `@Module`.
 
-- [ ] **Step 10: Verificar que pasa**
+- [x] **Step 10: Verificar que pasa**
 
 Run: `cd api && npm run test:e2e -- points-service`
 Expected: PASS (2/2).
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add api/prisma api/src/students/nivel.ts api/src/students/nivel-progreso.spec.ts api/src/points api/src/app.module.ts api/test/points-service.e2e-spec.ts
@@ -361,7 +361,7 @@ git commit -m "feat(api): add events/points schema and transactional PointsServi
   - `GET /events` (público, activos), `GET/POST /admin/events`, `PATCH/DELETE /admin/events/:id` — admin/gestor; DELETE 204.
   - **Este task registra el `checkin` en el servicio** pero su endpoint HTTP y sus tests van en Task 3.
 
-- [ ] **Step 1: Escribir los DTOs**
+- [x] **Step 1: Escribir los DTOs**
 
 `api/src/events/dto/event.dto.ts`:
 ```ts
@@ -392,7 +392,7 @@ export class CheckinDto {
 }
 ```
 
-- [ ] **Step 2: Escribir el test e2e (falla)**
+- [x] **Step 2: Escribir el test e2e (falla)**
 
 `api/test/events.e2e-spec.ts`:
 ```ts
@@ -470,12 +470,12 @@ describe('Events CRUD + public catalog', () => {
 });
 ```
 
-- [ ] **Step 3: Ejecutar y verificar que falla**
+- [x] **Step 3: Ejecutar y verificar que falla**
 
 Run: `cd api && npm run test:e2e -- events`
 Expected: FAIL (rutas no existen).
 
-- [ ] **Step 4: Implementar `EventsService`**
+- [x] **Step 4: Implementar `EventsService`**
 
 `api/src/events/events.service.ts`:
 ```ts
@@ -553,7 +553,7 @@ export class EventsService {
 }
 ```
 
-- [ ] **Step 5: Implementar los controllers y el módulo**
+- [x] **Step 5: Implementar los controllers y el módulo**
 
 `api/src/events/events-admin.controller.ts`:
 ```ts
@@ -624,12 +624,12 @@ export class EventsModule {}
 
 En `api/src/app.module.ts`: importa `EventsModule` y añádelo al array `imports`.
 
-- [ ] **Step 6: Verificar que pasa**
+- [x] **Step 6: Verificar que pasa**
 
 Run: `cd api && npm run test:e2e -- events`
 Expected: PASS (3/3).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add api/src/events api/src/app.module.ts api/test/events.e2e-spec.ts
@@ -651,7 +651,7 @@ git commit -m "feat(api): add events admin CRUD and public catalog"
   - `GET /students/me/points` (StudentGuard) → `PointsService.getSummary(student.id)`.
   - Verificación E2E del flujo completo de check-in: otorga puntos, recalcula nivel, único por evento (409), token/evento inválido (404), y el joven ve el movimiento en `/students/me/points`.
 
-- [ ] **Step 1: Añadir el endpoint de puntos del estudiante**
+- [x] **Step 1: Añadir el endpoint de puntos del estudiante**
 
 En `api/src/students/students.controller.ts`, importa el servicio de puntos:
 ```ts
@@ -677,7 +677,7 @@ import { PointsModule } from '../points/points.module';
   imports: [AuthModule, StorageModule, PointsModule],
 ```
 
-- [ ] **Step 2: Escribir el test e2e del flujo completo (falla)**
+- [x] **Step 2: Escribir el test e2e del flujo completo (falla)**
 
 `api/test/checkin.e2e-spec.ts`:
 ```ts
@@ -779,22 +779,22 @@ describe('Event check-in flow', () => {
 });
 ```
 
-- [ ] **Step 3: Ejecutar y verificar que falla**
+- [x] **Step 3: Ejecutar y verificar que falla**
 
 Run: `cd api && npm run test:e2e -- checkin`
 Expected: FAIL (`/students/me/points` no existe todavía; el resto del flujo depende de él).
 
-- [ ] **Step 4: Verificar que pasa**
+- [x] **Step 4: Verificar que pasa**
 
 Run: `cd api && npm run test:e2e -- checkin`
 Expected: PASS (5/5). (La implementación del endpoint ya se hizo en el Step 1.)
 
-- [ ] **Step 5: Correr toda la suite (sin regresiones)**
+- [x] **Step 5: Correr toda la suite (sin regresiones)**
 
 Run: `cd api && nvm use 20.19.1 && npm test && npm run test:e2e`
 Expected: unit y e2e verdes (incluye points-service, events, checkin además de lo anterior).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add api/src/students/students.controller.ts api/src/students/students.module.ts api/test/checkin.e2e-spec.ts
@@ -815,7 +815,7 @@ git commit -m "feat(api): add QR check-in point award and student points endpoin
   - `/mis-puntos` — nivel actual, puntos acumulados, barra de progreso al siguiente nivel (`porcentaje`), eventos asistidos, historial de movimientos. Redirige a `/ingresar` si no hay sesión (401).
   - `/eventos` — catálogo público de eventos activos (título, categoría, fecha, lugar, puntos). No requiere sesión.
 
-- [ ] **Step 1: Crear `/mis-puntos`**
+- [x] **Step 1: Crear `/mis-puntos`**
 
 `web/src/app/(estudiante)/mis-puntos/page.tsx`:
 ```tsx
@@ -886,7 +886,7 @@ export default function MisPuntosPage() {
 }
 ```
 
-- [ ] **Step 2: Crear `/eventos`**
+- [x] **Step 2: Crear `/eventos`**
 
 `web/src/app/(estudiante)/eventos/page.tsx`:
 ```tsx
@@ -930,12 +930,12 @@ export default function EventosPage() {
 }
 ```
 
-- [ ] **Step 3: Verificar build y rutas**
+- [x] **Step 3: Verificar build y rutas**
 
 Run: `cd web && nvm use 20.19.1 && npm run build`
 Expected: build OK; `/mis-puntos` y `/eventos` aparecen en la lista de rutas. (Si es práctico con servidores arriba: `curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/eventos` → 200.)
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add web/src/app
@@ -956,14 +956,14 @@ git commit -m "feat(web): add student points and events catalog pages"
   - Nav del panel gana enlace **Eventos** (`/panel/eventos`) para todos los roles internos (junto a Estudiantes/Intereses).
   - `/panel/eventos` — lista de eventos (título, categoría, fecha, puntos, activo); crear (título, descripción, categoría, fecha, lugar, puntos); activar/desactivar; borrar (confirmación + feedback); enlace a `/panel/eventos/checkin`.
 
-- [ ] **Step 1: Añadir el enlace al nav del layout**
+- [x] **Step 1: Añadir el enlace al nav del layout**
 
 En `web/src/app/(admin)/panel/layout.tsx`, dentro del `<nav>`, añade (junto a los enlaces existentes):
 ```tsx
 <Link href="/panel/eventos">Eventos</Link>
 ```
 
-- [ ] **Step 2: Crear la página de eventos**
+- [x] **Step 2: Crear la página de eventos**
 
 `web/src/app/(admin)/panel/eventos/page.tsx`:
 ```tsx
@@ -1048,12 +1048,12 @@ export default function PanelEventosPage() {
 }
 ```
 
-- [ ] **Step 3: Verificar build y ruta**
+- [x] **Step 3: Verificar build y ruta**
 
 Run: `cd web && nvm use 20.19.1 && npm run build`
 Expected: build OK; `/panel/eventos` en la lista de rutas.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add web/src/app
@@ -1071,7 +1071,7 @@ git commit -m "feat(web): add events admin CRUD page and nav link"
 - Consumes: `api()`, `GET /admin/events`, `POST /admin/events/:id/checkin`, `Html5Qrcode` (`html5-qrcode`, ya instalado).
 - Produces: `/panel/eventos/checkin` — el staff elige un evento activo, escanea el QR de la credencial (o pega token/URL) y ve confirmación (nombre, nivel, puntos otorgados, total). Reutiliza el patrón anti-doble-escaneo del módulo comercio (`busyRef` + `mountedRef` + `scannerRef`).
 
-- [ ] **Step 1: Crear la página del escáner**
+- [x] **Step 1: Crear la página del escáner**
 
 `web/src/app/(admin)/panel/eventos/checkin/page.tsx`:
 ```tsx
@@ -1203,17 +1203,17 @@ export default function CheckinPage() {
 }
 ```
 
-- [ ] **Step 2: Verificar build y ruta**
+- [x] **Step 2: Verificar build y ruta**
 
 Run: `cd web && nvm use 20.19.1 && npm run build`
 Expected: build OK; `/panel/eventos/checkin` en la lista de rutas.
 
-- [ ] **Step 3: Verificación E2E manual del flujo completo**
+- [x] **Step 3: Verificación E2E manual del flujo completo**
 
 Con API (`npm run start:dev`, `npm run db:seed`) y web arriba, sesión admin: en **Eventos** crea un evento activo con puntos; entra a **Check-in con QR**, selecciona el evento; abre la credencial de un joven de prueba (`/c/<token>`) en otro dispositivo/pestaña y escanea su QR (o pega el token). Verifica que la respuesta muestra nombre/nivel/puntos y que, iniciando sesión como ese joven, en **/mis-puntos** aparecen los puntos, el nivel recalculado, el conteo de eventos asistidos y el movimiento en el historial. Repite el escaneo del mismo joven → debe rechazar con 409.
 Expected: check-in otorga puntos una sola vez por evento+joven, recalcula nivel y el joven lo ve reflejado.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add web/src/app

@@ -1,13 +1,13 @@
 # Estado del proyecto — para continuar
 
-> Última actualización: 2026-07-22. HEAD: `704950f`. Rama: `master` (sin remoto).
+> Última actualización: 2026-07-23. HEAD: `2968cb7`. Rama: `master` (sin remoto).
 
-## Roadmap (≈10 planes; 01–06 hechos)
-01 Fundamentos✅ · 02 Estudiante✅ · 03 Credencial/INE/reset✅ · 04 Comercios✅ · 05 Panel admin base✅ · 06 Panel admin cuentas✅ · **07 Puntos+Eventos+check-in (siguiente)** · 08 Cursos/talleres+Bolsa de trabajo · 09 PWA · 10 Hardening+despliegue.
+## Roadmap (≈10 planes; 01–07 hechos)
+01 Fundamentos✅ · 02 Estudiante✅ · 03 Credencial/INE/reset✅ · 04 Comercios✅ · 05 Panel admin base✅ · 06 Panel admin cuentas✅ · 07 Puntos+Eventos+check-in✅ · **08 Cursos/talleres+Bolsa de trabajo (siguiente)** · 09 PWA · 10 Hardening+despliegue.
 
 ## Dónde estamos
 
-**Planes 01–06 COMPLETOS y verificados.** Suites: unit 21/21, e2e 71/71 (suite serializada con `maxWorkers:1`); frontend builds verdes.
+**Planes 01–07 COMPLETOS y verificados.** Suites: unit 24/24, e2e 81/81 (suite serializada con `maxWorkers:1`); frontend builds verdes.
 
 ### Plan 06 (nuevo) — Panel admin (cuentas):
 - Usuarios internos CRUD **solo admin** (`@Roles('admin')`, gestor→403, sin auto-borrado 400): `api/src/admin/internal-users.*` + `/panel/usuarios` (enlace de nav solo admin).
@@ -75,14 +75,17 @@ Verificación real (no solo build):
 - Cobertura e2e `/interests`: asertar orden y campos exactos.
 - Definir hosting (Railway vs VPS) antes del primer deploy.
 
-## Próximo paso: Plan 07 (por escribir)
+## Plan 07 — COMPLETO (2026-07-23)
 
-**Plan 07 — Puntos/niveles + Eventos + QR check-in.**
-- Sistema de puntos por nivel (Bronce/Plata/Oro/Diamante) usando el helper `nivelForPuntos` (ya existe, sin usar); historial de movimientos; estadísticas.
-- Catálogo de eventos por categoría con puntos por asistencia; QR de check-in (staff escanea al joven en el evento → otorga puntos).
-- Escribir con `writing-plans`, ejecutar con `subagent-driven-development`.
+**Plan 07 — Puntos/niveles + Eventos + QR check-in.** Ejecutado con `executing-plans`.
+- **API:** enums/modelos `Event`/`EventCheckin`/`PointsMovement` (migración `20260723022831_events_points`); `PointsService.award(tx,...)` transaccional (inserta movimiento + recalcula nivel con `nivelForPuntos`, nunca a mano) y `getSummary`; helper puro `progresoNivel`. `EventsService` CRUD (`/admin/events*`, roles admin/gestor) + catálogo público solo-activos (`GET /events`). Check-in atómico (`POST /admin/events/:id/checkin`): único por `@@unique([eventId,studentId])` (2º → 409), token/evento inválido → 404, 401 sin sesión staff. Endpoint del joven `GET /students/me/points`.
+- **Web:** `/mis-puntos` (nivel, barra de progreso, eventos asistidos, historial), `/eventos` (catálogo público), `/panel/eventos` (CRUD + activar/desactivar) con enlace en nav, `/panel/eventos/checkin` (escáner `html5-qrcode`, reutiliza patrón anti-doble-escaneo del módulo comercio + entrada manual).
+- **Verificación real:** unit 24/24, e2e 81/81 (`maxWorkers:1`), sin regresiones; `web build` OK con las 4 rutas nuevas. Falta verificación E2E manual con cámara (Task 6 Step 3) contra API+web vivas.
 
-> Pendientes tras Plan 07: Plan 08 cursos/talleres + bolsa de trabajo (spec §3.1, aún sin construir); Plan 09 PWA; Plan 10 hardening+deploy.
+## Próximo paso: Plan 08 (por escribir)
+**Plan 08 — Cursos/talleres (catálogo informativo) + Bolsa de trabajo (directorio de vacantes)**, ambos con CRUD admin y solo-lectura para el estudiante (spec §3.1 #9-10, §4 `Workshop`/`JobPosting`). Escribir con `writing-plans`.
+
+> Pendientes tras Plan 08: Plan 09 PWA; Plan 10 hardening+deploy.
 > **RELEASE-BLOCKER vigente:** cifrado en reposo del INE + restricción R2 antes de producción con INE real (spec §7, LGPDPPSO).
 
 ## Referencias
