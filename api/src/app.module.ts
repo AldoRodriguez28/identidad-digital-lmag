@@ -10,6 +10,7 @@ import { AdminModule } from './admin/admin.module';
 import { PointsModule } from './points/points.module';
 import { EventsModule } from './events/events.module';
 import { WorkshopsModule } from './workshops/workshops.module';
+import { JobsModule } from './jobs/jobs.module';
 
 @Controller()
 class HealthController {
@@ -17,5 +18,5 @@ class HealthController {
   health() { return { status: 'ok' }; }
 }
 
-@Module({ imports: [PrismaModule, AuthModule, StorageModule, EmailModule, InterestsModule, StudentsModule, CommerceModule, AdminModule, PointsModule, EventsModule, WorkshopsModule], controllers: [HealthController] })
+@Module({ imports: [PrismaModule, AuthModule, StorageModule, EmailModule, InterestsModule, StudentsModule, CommerceModule, AdminModule, PointsModule, EventsModule, WorkshopsModule, JobsModule], controllers: [HealthController] })
 export class AppModule {}
