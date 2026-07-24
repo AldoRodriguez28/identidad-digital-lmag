@@ -31,6 +31,8 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           <Link href="/panel/intereses">Intereses</Link>
           <Link href="/panel/comercios">Comercios</Link>
           <Link href="/panel/eventos">Eventos</Link>
+          <Link href="/panel/talleres">Talleres</Link>
+          <Link href="/panel/vacantes">Vacantes</Link>
           {me.rol === 'admin' && <Link href="/panel/usuarios">Usuarios</Link>}
           <Link href="/panel/perfil">Mi perfil</Link>
         </nav>
