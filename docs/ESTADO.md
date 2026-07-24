@@ -1,13 +1,20 @@
 # Estado del proyecto — para continuar
 
-> Última actualización: 2026-07-23. HEAD: `bbf186f`. Rama: `master` (sin remoto).
+> Última actualización: 2026-07-23. HEAD: `865c252`. Rama: `master` (sin remoto).
 
-## Roadmap (≈10 planes; 01–08 hechos)
-01 Fundamentos✅ · 02 Estudiante✅ · 03 Credencial/INE/reset✅ · 04 Comercios✅ · 05 Panel admin base✅ · 06 Panel admin cuentas✅ · 07 Puntos+Eventos+check-in✅ · 08 Cursos/talleres+Bolsa de trabajo✅ · **09 PWA (siguiente)** · 10 Hardening+despliegue.
+## Roadmap (≈10 planes; 01–09 hechos)
+01 Fundamentos✅ · 02 Estudiante✅ · 03 Credencial/INE/reset✅ · 04 Comercios✅ · 05 Panel admin base✅ · 06 Panel admin cuentas✅ · 07 Puntos+Eventos+check-in✅ · 08 Cursos/talleres+Bolsa de trabajo✅ · 09 PWA✅ · **10 Hardening+despliegue (siguiente)**.
 
 ## Dónde estamos
 
-**Planes 01–08 COMPLETOS y verificados.** Suites: unit 24/24, e2e 87/87 (suite serializada con `maxWorkers:1`); frontend builds verdes.
+**Planes 01–09 COMPLETOS.** Suites backend: unit 24/24, e2e 87/87 (`maxWorkers:1`); frontend builds verdes. **Plan 09 (PWA):** verificación en navegador (instalabilidad + credencial offline) PENDIENTE del operador — ver abajo.
+
+### Plan 09 (nuevo) — PWA instalable:
+- Ejecutado con `subagent-driven-development` (3 tareas review-clean + 1 fix Important + revisión de rama READY TO MERGE).
+- Enfoque **nativo de Next 16 sin librería PWA** (`@ducanh2912/next-pwa`/serwist son plugins de webpack incompatibles con Turbopack): `app/manifest.ts` + Metadata/viewport API + service worker a mano.
+- Piezas: `manifest.ts` (standalone, íconos 192/512/maskable), `scripts/generate-icons.mjs` (sharp, placeholders "ID") + `public/icons/*.png`, `layout.tsx` (metadata + `viewport` themeColor + `lang="es"` + monta `<ServiceWorkerRegister/>`), `offline/page.tsx`, `public/sw.js` (`/c/*` network-first+caché con fallback `/offline`; `/_next/static/*` cache-first; navegaciones→`/offline`; **nunca** cachea `/students/me|/admin|/auth`), `sw-register.tsx`.
+- **PENDIENTE (verificación manual en Chrome):** DevTools→Application: manifest sin errores + "installable", SW `sw.js` activo; abrir un `/c/<token>` online y confirmar que en Cache Storage `idj-v1` están **ambos** (documento `/c/<token>` **y** JSON de la API), luego Network→Offline y recargar → credencial+QR desde caché; ruta autenticada offline → `/offline`; Lighthouse PWA installable. En producción el SW exige **HTTPS**.
+- **Backlog Plan 10 (de la revisión):** caché `/c/` sin TTL/cap acumula credenciales de terceros en dispositivos compartidos (privacidad); documentar bump coordinado de `CACHE`/`idj-v1` (skipWaiting+claim con `/_next/static` cache-first puede dar chunk-skew).
 
 ### Plan 08 (nuevo) — Cursos/talleres + Bolsa de trabajo:
 - Ejecutado con `subagent-driven-development` (4 tareas de código review-clean + revisión de rama READY TO MERGE).
@@ -88,10 +95,8 @@ Verificación real (no solo build):
 - **Web:** `/mis-puntos` (nivel, barra de progreso, eventos asistidos, historial), `/eventos` (catálogo público), `/panel/eventos` (CRUD + activar/desactivar) con enlace en nav, `/panel/eventos/checkin` (escáner `html5-qrcode`, reutiliza patrón anti-doble-escaneo del módulo comercio + entrada manual).
 - **Verificación real:** unit 24/24, e2e 81/81 (`maxWorkers:1`), sin regresiones; `web build` OK con las 4 rutas nuevas. Falta verificación E2E manual con cámara (Task 6 Step 3) contra API+web vivas.
 
-## Próximo paso: Plan 09 (por escribir)
-**Plan 09 — PWA instalable** (manifest.json + service worker `@ducanh2912/next-pwa` + meta tags específicos de Safari; instalable en iOS/Android). Spec §3.1 #11. Escribir con `writing-plans`.
-
-> Pendientes tras Plan 09: Plan 10 hardening+deploy.
+## Próximo paso: Plan 10 (por escribir) — último del roadmap
+**Plan 10 — Hardening + despliegue.** **RELEASE-BLOCKER:** cifrado en reposo del INE + restricción R2 (spec §7, LGPDPPSO). Además, backlog acumulado pre-deploy: CORS allowlist por env (hoy `origin:true`), purga de sesiones expiradas, adaptadores R2/Resend, HTTPS (requerido por el SW de la PWA), y los backlogs menores de planes previos (incl. caché `/c/` sin TTL de Plan 09, "Hibrido" sin acento de Plan 08). Definir hosting (Railway vs VPS). Escribir con `writing-plans`.
 > **RELEASE-BLOCKER vigente:** cifrado en reposo del INE + restricción R2 antes de producción con INE real (spec §7, LGPDPPSO).
 
 ## Referencias

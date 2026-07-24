@@ -45,7 +45,7 @@
   - `/manifest.webmanifest` (Next lo sirve desde `manifest.ts`) con `name`, `short_name`, `display:"standalone"`, `theme_color`, `background_color`, e `icons` [192, 512, 512-maskable].
   - Los 4 archivos PNG en `web/public/icons/` (servidos como `/icons/<archivo>`).
 
-- [ ] **Step 1: Crear el manifest**
+- [x] **Step 1: Crear el manifest**
 
 `web/src/app/manifest.ts`:
 ```ts
@@ -72,7 +72,7 @@ export default function manifest(): MetadataRoute.Manifest {
 }
 ```
 
-- [ ] **Step 2: Crear el script generador de íconos**
+- [x] **Step 2: Crear el script generador de íconos**
 
 `web/scripts/generate-icons.mjs`:
 ```js
@@ -110,12 +110,12 @@ await gen('icon-512-maskable.png', { size: 512, fontRatio: 0.36, radiusRatio: 0 
 await gen('apple-touch-icon.png', { size: 180, fontRatio: 0.5, radiusRatio: 0 });
 ```
 
-- [ ] **Step 3: Ejecutar el script y generar los PNGs**
+- [x] **Step 3: Ejecutar el script y generar los PNGs**
 
 Run: `cd web && nvm use 20.19.1 && node scripts/generate-icons.mjs`
 Expected: imprime `wrote icon-192.png` … `wrote apple-touch-icon.png`; los 4 PNGs existen en `web/public/icons/`.
 
-- [ ] **Step 4: Verificar dimensiones y que el monograma se rasterizó**
+- [x] **Step 4: Verificar dimensiones y que el monograma se rasterizó**
 
 Run:
 ```bash
@@ -125,12 +125,12 @@ Expected: `icon-192 192x192`, `icon-512 512x512`, `icon-512-maskable 512x512`, `
 
 Además, **abre `web/public/icons/icon-512.png` y confirma visualmente** que se ve el cuadrado negro con "ID" en blanco. Si el texto NO aparece (el rasterizador SVG de sharp no encontró fuente), es aceptable para un placeholder dejar el cuadrado negro sólido; anótalo como concern. No bloquea (los íconos siguen siendo PNGs válidos e instalables).
 
-- [ ] **Step 5: Verificar el build y la ruta del manifest**
+- [x] **Step 5: Verificar el build y la ruta del manifest**
 
 Run: `cd web && nvm use 20.19.1 && npm run build`
 Expected: build OK; en la lista de rutas aparece `/manifest.webmanifest`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add web/src/app/manifest.ts web/scripts/generate-icons.mjs web/public/icons
@@ -153,7 +153,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
   - `metadata` con `applicationName`, `title`, `description`, `appleWebApp`, `icons.apple`; export `viewport` con `themeColor` + `width/initialScale`; `<html lang="es">`.
   - Ruta `/offline` (página estática de respaldo, sin llamadas a la API), usada por el SW en Task 3.
 
-- [ ] **Step 1: Reescribir el metadata del layout raíz**
+- [x] **Step 1: Reescribir el metadata del layout raíz**
 
 Reemplaza el contenido de `web/src/app/layout.tsx` por (conserva las fuentes Geist y `globals.css` existentes; cambia `lang`, `metadata` y añade `viewport`):
 ```tsx
@@ -201,7 +201,7 @@ export default function RootLayout({
 }
 ```
 
-- [ ] **Step 2: Crear la página offline**
+- [x] **Step 2: Crear la página offline**
 
 `web/src/app/offline/page.tsx`:
 ```tsx
@@ -220,12 +220,12 @@ export default function OfflinePage() {
 }
 ```
 
-- [ ] **Step 3: Verificar el build y las rutas**
+- [x] **Step 3: Verificar el build y las rutas**
 
 Run: `cd web && nvm use 20.19.1 && npm run build`
 Expected: build OK; `/offline` aparece en la lista de rutas; sin errores de tipo por `Metadata`/`Viewport`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add web/src/app/layout.tsx web/src/app/offline
@@ -249,7 +249,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
   - `/sw.js` (servido estático desde `public/`) con estrategias: `/c/*` network-first+caché, `/_next/static/*` cache-first, navegaciones → `/offline` en fallo.
   - `<ServiceWorkerRegister />` montado en el layout: registra `/sw.js` en el cliente. Esto completa la instalabilidad (Chrome exige un SW con handler `fetch`).
 
-- [ ] **Step 1: Escribir el service worker**
+- [x] **Step 1: Escribir el service worker**
 
 `web/public/sw.js`:
 ```js
@@ -323,7 +323,7 @@ self.addEventListener('fetch', (event) => {
 });
 ```
 
-- [ ] **Step 2: Escribir el client component de registro**
+- [x] **Step 2: Escribir el client component de registro**
 
 `web/src/app/sw-register.tsx`:
 ```tsx
@@ -340,7 +340,7 @@ export default function ServiceWorkerRegister() {
 }
 ```
 
-- [ ] **Step 3: Montar el registro en el layout**
+- [x] **Step 3: Montar el registro en el layout**
 
 En `web/src/app/layout.tsx`, importa el componente y móntalo dentro de `<body>` junto a `{children}`:
 ```tsx
@@ -354,12 +354,12 @@ Y cambia el `<body>` a:
       </body>
 ```
 
-- [ ] **Step 4: Verificar el build**
+- [x] **Step 4: Verificar el build**
 
 Run: `cd web && nvm use 20.19.1 && npm run build`
 Expected: build OK, sin errores de tipo. (`public/sw.js` es un asset estático; no lo procesa el bundler.)
 
-- [ ] **Step 5: Verificación manual de instalabilidad + offline**
+- [x] **Step 5: Verificación manual de instalabilidad + offline**
 
 Levanta la app en modo producción y comprueba los artefactos y el flujo (con la API viva para poder cargar una credencial):
 ```bash
@@ -379,7 +379,7 @@ Luego, en Chrome (con la API corriendo para cargar datos):
 
 Expected: instalable, SW activo, credencial+QR offline desde caché, rutas autenticadas caen a `/offline`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add web/public/sw.js web/src/app/sw-register.tsx web/src/app/layout.tsx
