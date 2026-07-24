@@ -11,13 +11,14 @@ import { ResetConfirmDto } from './dto/reset-confirm.dto';
 import { StudentGuard } from './student.guard';
 import { CurrentStudent } from './current-student.decorator';
 import { isPngOrJpeg } from './image-signature';
+import { PointsService } from '../points/points.service';
 
 const COOKIE = process.env.SESSION_COOKIE_NAME ?? 'idsid';
 const DAY = 24 * 60 * 60 * 1000;
 
 @Controller('students')
 export class StudentsController {
-  constructor(private students: StudentsService) {}
+  constructor(private students: StudentsService, private points: PointsService) {}
 
   @Post('register')
   register(@Body() dto: RegisterStudentDto) {
@@ -61,6 +62,12 @@ export class StudentsController {
   @Get('me')
   me(@CurrentStudent() student: Student) {
     return this.students.toPublicView(student);
+  }
+
+  @UseGuards(StudentGuard)
+  @Get('me/points')
+  getPoints(@CurrentStudent() student: any) {
+    return this.points.getSummary(student.id);
   }
 
   @UseGuards(StudentGuard)
