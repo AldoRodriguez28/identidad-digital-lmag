@@ -57,6 +57,12 @@ enum TipoMovimiento {
   ajuste
 }
 
+enum Modalidad {
+  presencial
+  virtual
+  hibrido
+}
+
 model Student {
   id                     String   @id @default(cuid())
   nombreCompleto         String
@@ -171,4 +177,25 @@ model PointsMovement {
   referencia String?
   puntos     Int
   createdAt  DateTime       @default(now())
+}
+
+model Workshop {
+  id          String    @id @default(cuid())
+  titulo      String
+  descripcion String
+  precio      Int
+  horario     String
+  modalidad   Modalidad
+  activo      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+}
+
+model JobPosting {
+  id          String   @id @default(cuid())
+  puesto      String
+  empresa     String
+  requisitos  String
+  contacto    String
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
 }
