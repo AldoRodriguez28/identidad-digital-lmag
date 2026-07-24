@@ -46,6 +46,17 @@ enum Nivel {
   diamante
 }
 
+enum EventoCategoria {
+  deportivo
+  cultural
+  taller
+}
+
+enum TipoMovimiento {
+  evento
+  ajuste
+}
+
 model Student {
   id                     String   @id @default(cuid())
   nombreCompleto         String
@@ -76,6 +87,8 @@ model Student {
   interests              StudentInterest[]
   passwordResets         PasswordReset[]
   benefitUsages          BenefitUsage[]
+  checkins               EventCheckin[]
+  pointsMovements        PointsMovement[]
 }
 
 model PasswordReset {
@@ -123,4 +136,39 @@ model BenefitUsage {
   student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId  String
   createdAt  DateTime @default(now())
+}
+
+model Event {
+  id              String          @id @default(cuid())
+  titulo          String
+  descripcion     String
+  categoria       EventoCategoria
+  fecha           DateTime
+  lugar           String
+  puntosOtorgados Int
+  activo          Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  checkins        EventCheckin[]
+}
+
+model EventCheckin {
+  id          String   @id @default(cuid())
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId     String
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId   String
+  otorgadoPor String
+  createdAt   DateTime @default(now())
+
+  @@unique([eventId, studentId])
+}
+
+model PointsMovement {
+  id         String         @id @default(cuid())
+  student    Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId  String
+  tipo       TipoMovimiento
+  referencia String?
+  puntos     Int
+  createdAt  DateTime       @default(now())
 }
