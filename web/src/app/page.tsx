@@ -1,65 +1,69 @@
-import Image from "next/image";
+import Image from 'next/image';
+import Link from 'next/link';
+import { LogIn, UserPlus } from 'lucide-react';
+
+const FEATURES = [
+  { icon: '/brand/icon-beneficios.png', label: 'Beneficios exclusivos' },
+  { icon: '/brand/icon-becas.png', label: 'Becas para cursos y certificaciones' },
+  { icon: '/brand/icon-descuentos.png', label: 'Descuentos en restaurantes y comercios' },
+  { icon: '/brand/icon-eventos.png', label: 'Eventos y conciertos' },
+  { icon: '/brand/icon-mentoria.png', label: 'Mentoría y apoyo para emprender' },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <div className="min-h-screen bg-white">
+      <div className="grid lg:grid-cols-2">
+        {/* Hero — izquierda */}
+        <div className="flex flex-col justify-center px-6 py-14 sm:px-12 lg:px-16">
+          <div className="mb-6 flex items-center gap-4">
+            <Image src="/brand/logo-ayuntamiento.png" alt="Ayuntamiento de San Andrés Tuxtla" width={528} height={256} priority className="h-14 w-auto" />
+            <span className="text-sm font-semibold text-gray-400">2026 – 2029</span>
+          </div>
+
+          <h1 className="text-5xl font-extrabold uppercase leading-none tracking-tight sm:text-6xl">
+            <span className="block text-guinda">Juventud</span>
+            <span className="block text-dorado">San Andrés</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+          <p className="mt-3 font-cursive text-4xl text-guinda">Tu talento, tu ciudad, tu futuro.</p>
+
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Link href="/registro" className="inline-flex items-center gap-2 rounded-full bg-guinda px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition-colors hover:bg-guinda-700">
+              <UserPlus size={16} />Registro
+            </Link>
+            <Link href="/ingresar" className="inline-flex items-center gap-2 rounded-full border-2 border-guinda px-6 py-3 text-sm font-bold uppercase tracking-wide text-guinda transition-colors hover:bg-guinda/5">
+              <LogIn size={16} />Iniciar sesión
+            </Link>
+          </div>
+
+          <p className="mt-6 max-w-md text-sm leading-relaxed text-gray-500">
+            Únete a la comunidad juvenil de <b className="text-guinda">San Andrés Tuxtla</b> y comienza a disfrutar de
+            <b className="text-guinda"> beneficios exclusivos, becas, descuentos</b>, eventos y mucho más.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Hero — imagen derecha */}
+        <div className="relative min-h-[320px] lg:min-h-screen">
+          <Image src="/brand/hero-jovenes.jpg" alt="Jóvenes de San Andrés Tuxtla" fill priority className="object-cover" />
+          <div className="absolute inset-0 bg-guinda/25" />
+          <div className="absolute right-6 top-6 rounded-xl bg-guinda px-4 py-2 text-right text-white shadow-lg">
+            <p className="text-sm font-extrabold uppercase leading-tight">Jóvenes fuertes,<br />economía fuerte.</p>
+          </div>
         </div>
-      </main>
+      </div>
+
+      {/* Franja de features */}
+      <div className="bg-guinda text-white">
+        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-8 sm:grid-cols-3 lg:grid-cols-5">
+          {FEATURES.map((feat) => (
+            <div key={feat.label} className="flex flex-col items-center gap-2 text-center">
+              <Image src={feat.icon} alt="" width={48} height={48} className="h-10 w-10 object-contain" />
+              <p className="text-[11px] font-semibold uppercase leading-tight tracking-wide text-white/90">{feat.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '../../../../lib/api';
+import { PageHeader, Card, Button, Badge, inputCls } from '../_components/ui';
 
 type Me = { id: string; email: string; nombre: string; rol: string };
 
@@ -9,8 +10,10 @@ export default function PerfilAdminPage() {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [savedMsg, setSavedMsg] = useState('');
+  const [savedOk, setSavedOk] = useState(false);
   const [pwd, setPwd] = useState({ currentPassword: '', newPassword: '' });
   const [pwdMsg, setPwdMsg] = useState('');
+  const [pwdOk, setPwdOk] = useState(false);
 
   useEffect(() => {
     api('/admin/me').then(async (r) => {
@@ -19,46 +22,56 @@ export default function PerfilAdminPage() {
   }, []);
 
   async function guardar(e: React.FormEvent) {
-    e.preventDefault();
-    setSavedMsg('');
+    e.preventDefault(); setSavedMsg('');
     const res = await api('/admin/me', { method: 'PATCH', body: JSON.stringify({ nombre, email }) });
-    if (res.ok) { const m = await res.json(); setMe(m); setSavedMsg('Perfil actualizado.'); }
-    else if (res.status === 409) setSavedMsg('Ese correo ya está en uso.');
-    else setSavedMsg('No se pudo actualizar.');
+    if (res.ok) { const m = await res.json(); setMe(m); setSavedOk(true); setSavedMsg('Perfil actualizado.'); }
+    else { setSavedOk(false); setSavedMsg(res.status === 409 ? 'Ese correo ya está en uso.' : 'No se pudo actualizar.'); }
   }
 
   async function cambiarPwd(e: React.FormEvent) {
-    e.preventDefault();
-    setPwdMsg('');
+    e.preventDefault(); setPwdMsg('');
     const res = await api('/admin/me/password', { method: 'POST', body: JSON.stringify(pwd) });
-    if (res.ok) { setPwd({ currentPassword: '', newPassword: '' }); setPwdMsg('Contraseña cambiada.'); }
-    else if (res.status === 400) setPwdMsg('La contraseña actual es incorrecta o la nueva es muy corta.');
-    else setPwdMsg('No se pudo cambiar.');
+    if (res.ok) { setPwd({ currentPassword: '', newPassword: '' }); setPwdOk(true); setPwdMsg('Contraseña cambiada.'); }
+    else { setPwdOk(false); setPwdMsg(res.status === 400 ? 'La contraseña actual es incorrecta o la nueva es muy corta.' : 'No se pudo cambiar.'); }
   }
 
-  if (!me) return <main className="p-6">Cargando…</main>;
+  if (!me) return <p className="text-sm text-gray-500">Cargando…</p>;
 
   return (
-    <main className="mx-auto max-w-md p-6 space-y-6">
-      <div>
-        <h1 className="mb-1 text-xl font-semibold">Mi perfil</h1>
-        <p className="text-sm text-gray-500">Rol: {me.rol}</p>
-      </div>
-      <form onSubmit={guardar} className="space-y-2">
-        <input className="w-full rounded border p-2" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre" required />
-        <input className="w-full rounded border p-2" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Correo" required />
-        {savedMsg && <p className="text-sm text-green-600">{savedMsg}</p>}
-        <button className="rounded bg-black px-4 py-2 text-white" type="submit">Guardar</button>
-      </form>
-      <form onSubmit={cambiarPwd} className="space-y-2 border-t pt-4">
-        <h2 className="text-sm font-medium">Cambiar contraseña</h2>
-        <input className="w-full rounded border p-2" type="password" placeholder="Contraseña actual" required
-          value={pwd.currentPassword} onChange={(e) => setPwd({ ...pwd, currentPassword: e.target.value })} />
-        <input className="w-full rounded border p-2" type="password" placeholder="Nueva contraseña (mín. 8)" required
-          value={pwd.newPassword} onChange={(e) => setPwd({ ...pwd, newPassword: e.target.value })} />
-        {pwdMsg && <p className="text-sm text-green-600">{pwdMsg}</p>}
-        <button className="rounded bg-black px-4 py-2 text-white" type="submit">Cambiar contraseña</button>
-      </form>
-    </main>
+    <div className="mx-auto max-w-2xl">
+      <PageHeader title="Mi Perfil" subtitle="Edita tus datos de acceso al panel." />
+
+      <Card className="mb-4">
+        <div className="mb-4 flex items-center gap-3">
+          <span className="grid h-12 w-12 place-items-center rounded-full bg-guinda text-lg font-semibold text-white">
+            {me.nombre.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('')}
+          </span>
+          <div>
+            <p className="font-semibold text-ink">{me.nombre}</p>
+            <Badge>{me.rol === 'admin' ? 'Administrador' : 'Gestor'}</Badge>
+          </div>
+        </div>
+        <form onSubmit={guardar} className="space-y-3">
+          <div><label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">Nombre</label>
+            <input className={inputCls} value={nombre} onChange={(e) => setNombre(e.target.value)} required /></div>
+          <div><label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">Correo</label>
+            <input className={inputCls} type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
+          {savedMsg && <p className={`text-sm ${savedOk ? 'text-success' : 'text-danger'}`}>{savedMsg}</p>}
+          <Button type="submit">Guardar cambios</Button>
+        </form>
+      </Card>
+
+      <Card>
+        <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-guinda">Cambiar contraseña</h2>
+        <form onSubmit={cambiarPwd} className="space-y-3">
+          <input className={inputCls} type="password" placeholder="Contraseña actual" required
+            value={pwd.currentPassword} onChange={(e) => setPwd({ ...pwd, currentPassword: e.target.value })} />
+          <input className={inputCls} type="password" placeholder="Nueva contraseña (mín. 8)" required
+            value={pwd.newPassword} onChange={(e) => setPwd({ ...pwd, newPassword: e.target.value })} />
+          {pwdMsg && <p className={`text-sm ${pwdOk ? 'text-success' : 'text-danger'}`}>{pwdMsg}</p>}
+          <Button type="submit" variant="outline">Cambiar contraseña</Button>
+        </form>
+      </Card>
+    </div>
   );
 }

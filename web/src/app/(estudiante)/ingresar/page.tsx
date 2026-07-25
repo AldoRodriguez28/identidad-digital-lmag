@@ -1,45 +1,55 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Mail, Lock, LogIn } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { AuthLayout, authInput } from '../../../components/AuthLayout';
 
 export default function IngresarPage() {
   const router = useRouter();
-  const [correo, setCorreo] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
+    setError(''); setLoading(true);
     try {
-      const res = await api('/students/login', {
-        method: 'POST',
-        body: JSON.stringify({ correo, password, remember }),
-      });
-      if (res.ok) router.push('/perfil');
-      else setError('Correo o contraseña incorrectos.');
-    } catch {
-      setError('No se pudo conectar con el servidor.');
-    }
+      const res = await api('/auth/ingresar', { method: 'POST', body: JSON.stringify({ email, password, remember }) });
+      if (res.ok) {
+        const { redirect } = await res.json();
+        router.push(redirect ?? '/perfil');
+      } else setError('Correo o contraseña incorrectos.');
+    } catch { setError('No se pudo conectar con el servidor.'); } finally { setLoading(false); }
   }
 
   return (
-    <main className="mx-auto mt-24 max-w-sm p-6">
-      <h1 className="mb-4 text-xl font-semibold">Ingresar</h1>
-      <form onSubmit={submit} className="space-y-3">
-        <input className="w-full rounded border p-2" placeholder="Correo" type="email"
-          value={correo} onChange={(e) => setCorreo(e.target.value)} />
-        <input className="w-full rounded border p-2" placeholder="Contraseña" type="password"
-          value={password} onChange={(e) => setPassword(e.target.value)} />
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+    <AuthLayout
+      title="Inicia sesión"
+      subtitle="Accede con tu correo a tu cuenta (joven, comercio o administrador)."
+      footer={<>¿Aún no tienes cuenta? <Link href="/registro" className="font-semibold text-white underline">Regístrate aquí</Link></>}
+    >
+      <form onSubmit={submit} className="space-y-4">
+        <div>
+          <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-ink"><Mail size={14} className="text-guinda" />Correo electrónico</label>
+          <input className={authInput} type="email" placeholder="Ingresa tu correo electrónico" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </div>
+        <div>
+          <label className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-ink"><Lock size={14} className="text-guinda" />Contraseña</label>
+          <input className={authInput} type="password" placeholder="Ingresa tu contraseña" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          <input type="checkbox" className="accent-guinda" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
           Mantener sesión iniciada
         </label>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button className="w-full rounded bg-black p-2 text-white" type="submit">Entrar</button>
+        {error && <p className="text-sm text-danger">{error}</p>}
+        <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-full bg-guinda px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition-colors hover:bg-guinda-700 disabled:opacity-50">
+          <LogIn size={16} />{loading ? 'Entrando…' : 'Iniciar sesión'}
+        </button>
       </form>
-    </main>
+    </AuthLayout>
   );
 }

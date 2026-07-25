@@ -1,12 +1,14 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { ArrowLeft, Camera } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { api } from '../../../../../lib/api';
+import { PageHeader, Card, Button, inputCls } from '../../_components/ui';
 
 type Event = { id: string; titulo: string; activo: boolean };
 type Result = { student: { nombreCompleto: string; nivel: string }; puntosOtorgados: number; puntosAcumulados: number };
 
-// Acepta la URL `.../c/<token>` o el token pelón.
 function extractToken(value: string): string {
   const t = value.trim();
   const idx = t.lastIndexOf('/c/');
@@ -37,9 +39,12 @@ export default function CheckinPage() {
     }).catch(() => {});
   }, []);
 
-  useEffect(() => () => {
-    mountedRef.current = false;
-    scannerRef.current?.stop().catch(() => {});
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      scannerRef.current?.stop().catch(() => {});
+    };
   }, []);
 
   async function checkin(rawValue: string) {
@@ -76,9 +81,7 @@ export default function CheckinPage() {
             scannerRef.current = null;
             setScanning(false);
             await checkin(decoded);
-          } finally {
-            busyRef.current = false;
-          }
+          } finally { busyRef.current = false; }
         },
         () => {},
       );
@@ -93,34 +96,39 @@ export default function CheckinPage() {
   }
 
   return (
-    <main className="mx-auto max-w-md p-6 space-y-4">
-      <h1 className="text-xl font-semibold">Check-in de evento</h1>
+    <div className="mx-auto max-w-lg">
+      <Link href="/panel/eventos" className="mb-3 inline-flex items-center gap-1 text-sm text-guinda hover:underline">
+        <ArrowLeft size={16} /> Volver a eventos
+      </Link>
+      <PageHeader title="Check-in de Evento" subtitle="Escanea el QR de la credencial del joven para otorgar puntos." />
 
-      <select className="w-full rounded border p-2" value={eventId} onChange={(e) => setEventId(e.target.value)}>
-        {events.length === 0 && <option value="">No hay eventos activos</option>}
-        {events.map((e) => <option key={e.id} value={e.id}>{e.titulo}</option>)}
-      </select>
-
-      <div id="qr-reader" className="w-full" />
-      <button className="w-full rounded bg-black p-2 text-white disabled:opacity-50" onClick={startScan} disabled={scanning || !eventId}>
-        Escanear con cámara
-      </button>
-
-      <form onSubmit={(e) => { e.preventDefault(); checkin(manual); }} className="space-y-2">
-        <input className="w-full rounded border p-2" placeholder="…o pega el token / URL de la credencial"
-          value={manual} onChange={(e) => setManual(e.target.value)} />
-        <button className="w-full rounded border p-2" type="submit">Registrar manualmente</button>
-      </form>
-
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {result && (
-        <div className="rounded-xl border p-4">
-          <p className="text-lg font-semibold">{result.student.nombreCompleto}</p>
-          <p className="text-sm">Nivel: <b className="capitalize">{result.student.nivel}</b></p>
-          <p className="mt-2 text-2xl font-bold text-green-600">+{result.puntosOtorgados} pts</p>
-          <p className="text-sm text-gray-500">Total: {result.puntosAcumulados} pts</p>
+      <Card className="space-y-4">
+        <div>
+          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">Evento</label>
+          <select className={inputCls} value={eventId} onChange={(e) => setEventId(e.target.value)}>
+            {events.length === 0 && <option value="">No hay eventos activos</option>}
+            {events.map((e) => <option key={e.id} value={e.id}>{e.titulo}</option>)}
+          </select>
         </div>
-      )}
-    </main>
+
+        <div id="qr-reader" className="w-full overflow-hidden rounded-xl" />
+        <Button className="w-full" onClick={startScan} disabled={scanning || !eventId}><Camera size={16} />Escanear con cámara</Button>
+
+        <form onSubmit={(e) => { e.preventDefault(); checkin(manual); }} className="space-y-2">
+          <input className={inputCls} placeholder="…o pega el token / URL de la credencial" value={manual} onChange={(e) => setManual(e.target.value)} />
+          <Button type="submit" variant="outline" className="w-full">Registrar manualmente</Button>
+        </form>
+
+        {error && <p className="text-sm text-danger">{error}</p>}
+        {result && (
+          <div className="rounded-xl border border-success/30 bg-success/5 p-4 text-center">
+            <p className="text-lg font-semibold text-ink">{result.student.nombreCompleto}</p>
+            <p className="text-sm text-gray-600">Nivel: <b className="capitalize">{result.student.nivel}</b></p>
+            <p className="mt-2 text-3xl font-extrabold text-success">+{result.puntosOtorgados} pts</p>
+            <p className="text-sm text-gray-500">Total: {result.puntosAcumulados} pts</p>
+          </div>
+        )}
+      </Card>
+    </div>
   );
 }
