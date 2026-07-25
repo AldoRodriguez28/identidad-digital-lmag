@@ -1,13 +1,41 @@
 # Estado del proyecto — para continuar
 
-> Última actualización: 2026-07-23. HEAD: `865c252`. Rama: `master` (sin remoto).
+> Última actualización: 2026-07-25. HEAD: `79d8e37`. Rama: `master` (sin remoto).
 
 ## Roadmap (≈10 planes; 01–09 hechos)
 01 Fundamentos✅ · 02 Estudiante✅ · 03 Credencial/INE/reset✅ · 04 Comercios✅ · 05 Panel admin base✅ · 06 Panel admin cuentas✅ · 07 Puntos+Eventos+check-in✅ · 08 Cursos/talleres+Bolsa de trabajo✅ · 09 PWA✅ · **10 Hardening+despliegue (siguiente)**.
 
+## 🎨 Sesión 2026-07-24/25 — Rediseño visual + features (commiteado en `d240716` api, `79d8e37` web)
+
+Se clonó el diseño del sitio de referencia (San Andrés Tuxtla) y se agregaron features pedidas por el cliente. **Tests: unit 24/24, e2e 88/88 verdes.** Detalle en la memoria `identidad-ui-pendiente-restyle` y `identidad-design-system-referente`.
+
+**Diseño:** sistema guinda `#58101f` / dorado `#b9852e` / Montserrat + Caveat (tokens en `web/src/app/globals.css`, Tailwind v4). Todo el sitio restilado: home landing, login/registro/recuperar (`AuthLayout`), credencial `/c` (solo QR), panel admin (shell sidebar + kit `panel/_components/ui.tsx`), lado estudiante (`components/StudentShell.tsx`), comercio (`components/CommerceShell.tsx`). Assets en `web/public/brand/`. Material de referencia en `web/reference/` (git-ignored).
+
+**Features nuevas:**
+- Intereses con **categoría** (educacion/deporte/cultura/... ); dashboard muestra categoría.
+- Estudiante: **nombre/apellidoPaterno/apellidoMaterno** (registro los pide, se guardan + `nombreCompleto` combinado); **redes** en registro; perfil ampliado (edad, redes, progreso de nivel) con **tarjeta flip 3D** (QR al reverso, `components/TarjetaFlip.tsx`).
+- Módulos **Educación / Deporte / Cultura**: modelo `Recurso{tipo,titulo,categoria,descripcion,contacto?}`, `GET /recursos?tipo=` + `/admin/recursos`, páginas estudiante + `/panel/recursos`.
+- **Login unificado** `POST /auth/ingresar` (detecta interno/comercio/estudiante y redirige); todos entran por `/ingresar` (`/login` y `/comercio/ingresar` redirigen).
+- **Correo único en todo el padrón** (`assertEmailAvailable`) al dar de alta (estudiante/comercio/interno).
+- **Comercio:** `validate` solo consulta; `POST /commerce/purchase` registra compra con **monto (decimal)** + descuento; `GET /commerce/usages` con filtro de fechas; panel comercio con **Escanear** + **Compras** (historial + totales).
+- Confirmación de contraseña en alta de comercio.
+- Fix: `mountedRef` reseteado en escáneres (StrictMode dev descartaba respuestas → "no hacía nada").
+
+## 🔎 PENDIENTE (revisión 2026-07-25, por prioridad)
+1. **RELEASE-BLOCKER:** cifrar INE en reposo + restringir R2 (LGPDPPSO, brief §7).
+2. **Plan 10 hardening/deploy:** CORS allowlist por env (hoy `origin:true`), purga de sesiones, adaptadores R2/Resend, HTTPS (lo exige la PWA), definir hosting (Railway vs VPS).
+3. **📱 Menú móvil:** los sidebars son `hidden md:flex` → en celular NO hay navegación (es PWA para jóvenes → importante). Falta hamburguesa.
+4. **Recursos sin e2e** (educación/deporte/cultura no cubierto por tests).
+5. **INE en el registro** (el original la pide al registrarse; nosotros aparte).
+6. **Correo único solo al crear**, falta en ediciones (helper ya soporta `exclude`).
+7. Confirmación de contraseña también en usuarios internos y registro estudiante.
+8. Placeholders: "Mis Logros" / "Próximo evento" (perfil), campana de notificaciones, WhatsApp de ayuda sin número.
+9. **Verificación PWA en navegador** (instalable + offline) nunca hecha.
+10. Menores: "Hibrido" sin acento, e2e 404 en varios CRUD, TTL caché `/c/` en SW.
+
 ## Dónde estamos
 
-**Planes 01–09 COMPLETOS.** Suites backend: unit 24/24, e2e 87/87 (`maxWorkers:1`); frontend builds verdes. **Plan 09 (PWA):** verificación en navegador (instalabilidad + credencial offline) PENDIENTE del operador — ver abajo.
+**Planes 01–09 COMPLETOS + rediseño/features 2026-07-24/25.** Suites backend: unit 24/24, e2e 88/88 (`maxWorkers:1`).
 
 ### Plan 09 (nuevo) — PWA instalable:
 - Ejecutado con `subagent-driven-development` (3 tareas review-clean + 1 fix Important + revisión de rama READY TO MERGE).
