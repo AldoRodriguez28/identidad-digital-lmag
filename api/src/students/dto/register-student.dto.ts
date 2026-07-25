@@ -4,6 +4,9 @@ import {
 
 export class RegisterStudentDto {
   @IsString() @IsNotEmpty() nombreCompleto: string;
+  @IsOptional() @IsString() nombre?: string;
+  @IsOptional() @IsString() apellidoPaterno?: string;
+  @IsOptional() @IsString() apellidoMaterno?: string;
   @IsDateString() fechaNacimiento: string;
   @IsString() @IsNotEmpty() curp: string;
   @IsString() @IsNotEmpty() sexo: string;

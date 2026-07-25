@@ -12,10 +12,10 @@ export class InterestsAdminController {
   constructor(private admin: AdminService) {}
 
   @Post()
-  create(@Body() dto: InterestDto) { return this.admin.createInterest(dto.nombre); }
+  create(@Body() dto: InterestDto) { return this.admin.createInterest(dto.nombre, dto.categoria); }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: InterestDto) { return this.admin.updateInterest(id, dto.nombre); }
+  update(@Param('id') id: string, @Body() dto: InterestDto) { return this.admin.updateInterest(id, dto.nombre, dto.categoria); }
 
   @Delete(':id')
   @HttpCode(204)

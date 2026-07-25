@@ -39,7 +39,7 @@ describe('Commerce validate', () => {
     await app.close();
   });
 
-  it('valida token -> devuelve nivel + descuento y registra uso', async () => {
+  it('valida token -> devuelve nivel + descuento SIN registrar (solo consulta)', async () => {
     const res = await request(app.getHttpServer()).post('/commerce/validate')
       .set('Cookie', cookie).send({ credentialToken: token });
     expect(res.status).toBe(201);
@@ -53,6 +53,19 @@ describe('Commerce validate', () => {
     expect(res.body.student.telefono).toBeUndefined();
     expect(res.body.student.ineFrente).toBeUndefined();
     expect(res.body.student.passwordHash).toBeUndefined();
+    // validate ya NO registra: el registro ocurre al capturar el monto (purchase)
+    const count = await prisma.benefitUsage.count({ where: { studentId: studentIds[0] } });
+    expect(count).toBe(0);
+  });
+
+  it('purchase con monto -> registra uso y calcula descuento', async () => {
+    const res = await request(app.getHttpServer()).post('/commerce/purchase')
+      .set('Cookie', cookie).send({ credentialToken: token, monto: 200 });
+    expect(res.status).toBe(201);
+    expect(res.body.monto).toBe(200);
+    expect(res.body.porcentajeDescuento).toBe(15);
+    expect(res.body.descuento).toBe(30); // 15% de 200
+    expect(res.body.montoFinal).toBe(170);
     const count = await prisma.benefitUsage.count({ where: { studentId: studentIds[0] } });
     expect(count).toBe(1);
   });

@@ -1,6 +1,7 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordService } from '../auth/password.service';
+import { assertEmailAvailable } from '../common/email-availability';
 
 const VIEW = { id: true, nombre: true, descripcion: true, porcentajeDescuento: true, email: true, activo: true, createdAt: true } as const;
 
@@ -13,8 +14,7 @@ export class CommercesAdminService {
   }
 
   async create(nombre: string, descripcion: string | undefined, porcentajeDescuento: number, email: string, password: string) {
-    const dup = await this.prisma.commerce.findUnique({ where: { email }, select: { id: true } });
-    if (dup) throw new ConflictException('El correo ya existe');
+    await assertEmailAvailable(this.prisma, email);
     const passwordHash = await this.passwords.hash(password);
     return this.prisma.commerce.create({ data: { nombre, descripcion, porcentajeDescuento, email, passwordHash }, select: VIEW });
   }

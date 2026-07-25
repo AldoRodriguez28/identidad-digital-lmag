@@ -66,6 +66,9 @@ enum Modalidad {
 model Student {
   id                     String   @id @default(cuid())
   nombreCompleto         String
+  nombre                 String?
+  apellidoPaterno        String?
+  apellidoMaterno        String?
   fechaNacimiento        DateTime
   curp                   String   @unique
   sexo                   String
@@ -107,10 +110,18 @@ model PasswordReset {
   createdAt DateTime @default(now())
 }
 
+enum CategoriaInteres {
+  deporte
+  cultura
+  arte
+  tecnologia
+}
+
 model Interest {
-  id       String            @id @default(cuid())
-  nombre   String            @unique
-  students StudentInterest[]
+  id        String           @id @default(cuid())
+  nombre    String           @unique
+  categoria CategoriaInteres @default(tecnologia)
+  students  StudentInterest[]
 }
 
 model StudentInterest {
@@ -136,12 +147,14 @@ model Commerce {
 }
 
 model BenefitUsage {
-  id         String   @id @default(cuid())
-  commerce   Commerce @relation(fields: [commerceId], references: [id], onDelete: Cascade)
-  commerceId String
-  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId  String
-  createdAt  DateTime @default(now())
+  id                 String   @id @default(cuid())
+  commerce           Commerce @relation(fields: [commerceId], references: [id], onDelete: Cascade)
+  commerceId         String
+  student            Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId          String
+  monto              Float?
+  porcentajeDescuento Int?
+  createdAt          DateTime @default(now())
 }
 
 model Event {
@@ -198,4 +211,21 @@ model JobPosting {
   contacto    String
   activo      Boolean  @default(true)
   createdAt   DateTime @default(now())
+}
+
+enum RecursoTipo {
+  educacion
+  deporte
+  cultura
+}
+
+model Recurso {
+  id          String      @id @default(cuid())
+  tipo        RecursoTipo
+  titulo      String
+  categoria   String
+  descripcion String
+  contacto    String?
+  activo      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
 }

@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { CommerceService } from './commerce.service';
 import { CommerceLoginDto } from './dto/commerce-login.dto';
 import { ValidateDto } from './dto/validate.dto';
+import { PurchaseDto } from './dto/purchase.dto';
 import { CommerceGuard } from './commerce.guard';
 import { CurrentCommerce } from './current-commerce.decorator';
 
@@ -41,5 +42,17 @@ export class CommerceController {
   @Post('validate')
   validate(@CurrentCommerce() commerce: any, @Body() dto: ValidateDto) {
     return this.commerce.validate(commerce.id, commerce.porcentajeDescuento, dto.credentialToken);
+  }
+
+  @UseGuards(CommerceGuard)
+  @Post('purchase')
+  purchase(@CurrentCommerce() commerce: any, @Body() dto: PurchaseDto) {
+    return this.commerce.registerPurchase(commerce.id, commerce.porcentajeDescuento, dto.credentialToken, dto.monto);
+  }
+
+  @UseGuards(CommerceGuard)
+  @Get('usages')
+  usages(@CurrentCommerce() commerce: any, @Query('from') from?: string, @Query('to') to?: string) {
+    return this.commerce.listUsages(commerce.id, from, to);
   }
 }

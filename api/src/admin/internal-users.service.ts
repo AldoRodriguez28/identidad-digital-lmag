@@ -1,7 +1,8 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Rol } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordService } from '../auth/password.service';
+import { assertEmailAvailable } from '../common/email-availability';
 
 const VIEW = { id: true, email: true, nombre: true, rol: true, activo: true, createdAt: true } as const;
 
@@ -14,8 +15,7 @@ export class InternalUsersService {
   }
 
   async create(email: string, nombre: string, rol: Rol, password: string) {
-    const dup = await this.prisma.internalUser.findUnique({ where: { email }, select: { id: true } });
-    if (dup) throw new ConflictException('El correo ya existe');
+    await assertEmailAvailable(this.prisma, email);
     const passwordHash = await this.passwords.hash(password);
     return this.prisma.internalUser.create({ data: { email, nombre, rol, passwordHash }, select: VIEW });
   }

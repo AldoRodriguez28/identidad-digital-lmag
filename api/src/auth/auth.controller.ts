@@ -24,6 +24,18 @@ export class AuthController {
     return user;
   }
 
+  @Post('ingresar')
+  async ingresar(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+    const { session, tipo, redirect } = await this.auth.loginUniversal(dto.email, dto.password, !!dto.remember);
+    res.cookie(COOKIE, session.id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: dto.remember ? 7 * DAY : DAY,
+    });
+    return { tipo, redirect };
+  }
+
   @Post('logout')
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const sid = req.cookies?.[COOKIE];

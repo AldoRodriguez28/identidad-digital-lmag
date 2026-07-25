@@ -6,7 +6,7 @@ export class InterestsService {
   constructor(private prisma: PrismaService) {}
   findAll() {
     return this.prisma.interest.findMany({
-      select: { id: true, nombre: true },
+      select: { id: true, nombre: true, categoria: true },
       orderBy: { nombre: 'asc' },
     });
   }

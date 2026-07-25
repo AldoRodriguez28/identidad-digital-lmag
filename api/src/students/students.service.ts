@@ -7,6 +7,8 @@ import { SessionService } from '../auth/session.service';
 import { StorageService } from '../storage/storage.service';
 import { EmailService } from '../email/email.service';
 import { edadFrom } from './edad';
+import { progresoNivel } from './nivel';
+import { assertEmailAvailable } from '../common/email-availability';
 import { RegisterStudentDto } from './dto/register-student.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
@@ -45,11 +47,13 @@ export class StudentsService {
   }
 
   async register(dto: RegisterStudentDto): Promise<StudentPublicView> {
+    // El correo debe ser único en TODO el padrón (interno / comercio / estudiante).
+    await assertEmailAvailable(this.prisma, dto.correo);
     const existing = await this.prisma.student.findFirst({
-      where: { OR: [{ correo: dto.correo }, { curp: dto.curp }] },
+      where: { curp: dto.curp },
       select: { id: true },
     });
-    if (existing) throw new ConflictException('Correo o CURP ya registrado');
+    if (existing) throw new ConflictException('El CURP ya está registrado');
 
     if (dto.interestIds?.length) {
       await this.assertInterestsExist(dto.interestIds);
@@ -98,12 +102,16 @@ export class StudentsService {
       where: { id: studentId },
       include: { interests: { include: { interest: { select: { id: true, nombre: true } } } } },
     });
+    const prog = progresoNivel(s.puntosAcumulados);
     return {
       ...this.toPublicView(s),
+      edad: edadFrom(s.fechaNacimiento),
+      nombre: s.nombre, apellidoPaterno: s.apellidoPaterno, apellidoMaterno: s.apellidoMaterno,
       telefono: s.telefono, escolaridad: s.escolaridad, calle: s.calle, colonia: s.colonia,
       codigoPostal: s.codigoPostal, numExt: s.numExt, numInt: s.numInt, entreCalles: s.entreCalles,
       facebook: s.facebook, instagram: s.instagram, tiktok: s.tiktok, whatsapp: s.whatsapp,
       interests: s.interests.map((si) => si.interest),
+      siguiente: prog.siguiente, puntosParaSiguiente: prog.puntosParaSiguiente, porcentaje: prog.porcentaje,
     };
   }
 
