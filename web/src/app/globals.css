@@ -35,3 +35,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+.fs-5 {
+  font-size: 1.25rem !important;
+}

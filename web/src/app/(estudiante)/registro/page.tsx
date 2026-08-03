@@ -138,7 +138,7 @@ export default function RegistroPage() {
       <div
         className="relative flex flex-col justify-center gap-6 bg-[#f8f7f4] px-6 py-10 pb-12 min-[576px]:px-10 min-[576px]:py-12 min-[992px]:z-[2] min-[992px]:w-[54%] min-[992px]:shrink-0 min-[992px]:px-16 min-[992px]:py-14"
       >
-        <div className="flex items-center gap-5">
+        <div className="flex flex-col items-center gap-5 text-center min-[576px]:flex-row min-[576px]:text-left">
           <Image src="/brand/logo-ayuntamiento.png" alt="Ayuntamiento de San Andrés Tuxtla" width={528} height={256} priority className="h-32 w-auto" />
           <h1 className="text-[2rem] font-extrabold text-guinda min-[992px]:text-[2.75rem]">REGISTRO</h1>
         </div>

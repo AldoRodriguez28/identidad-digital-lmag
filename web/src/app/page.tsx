@@ -1,69 +1,94 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { LogIn, UserPlus } from 'lucide-react';
+import { User, LogIn, Users } from 'lucide-react';
 
-const FEATURES = [
-  { icon: '/brand/icon-beneficios.png', label: 'Beneficios exclusivos' },
-  { icon: '/brand/icon-becas.png', label: 'Becas para cursos y certificaciones' },
-  { icon: '/brand/icon-descuentos.png', label: 'Descuentos en restaurantes y comercios' },
-  { icon: '/brand/icon-eventos.png', label: 'Eventos y conciertos' },
-  { icon: '/brand/icon-mentoria.png', label: 'Mentoría y apoyo para emprender' },
+const FEATURES: { icon: string; label: React.ReactNode }[] = [
+  { icon: '/brand/icon-beneficios.png', label: <>BENEFICIOS<br />EXCLUSIVOS</> },
+  { icon: '/brand/icon-becas.png', label: <>BECAS PARA CURSOS<br />Y CERTIFICACIONES</> },
+  { icon: '/brand/icon-descuentos.png', label: <>DESCUENTOS EN COMERCIOS<br />LOCALES</> },
+  { icon: '/brand/icon-eventos.png', label: <>EVENTOS Y<br />FESTIVALES</> },
+  { icon: '/brand/icon-mentoria.png', label: <>MENTORÍA Y APOYO<br />PARA EMPRENDER</> },
 ];
+
+const ctaCls =
+  'inline-flex w-fit items-center gap-3 rounded-full border-2 border-dorado py-2.5 pl-2.5 pr-7 transition-colors';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white">
-      <div className="grid lg:grid-cols-2">
-        {/* Hero — izquierda */}
-        <div className="flex flex-col justify-center px-6 py-14 sm:px-12 lg:px-16">
-          <div className="mb-6 flex items-center gap-4">
-            <Image src="/brand/logo-ayuntamiento.png" alt="Ayuntamiento de San Andrés Tuxtla" width={528} height={256} priority className="h-14 w-auto" />
-            <span className="text-sm font-semibold text-gray-400">2026 – 2029</span>
+    <main className="flex flex-col md:h-dvh md:overflow-hidden">
+      {/* Hero */}
+      <section className="relative flex min-h-[50dvh] bg-[#f8f7f4] md:min-h-0 md:flex-1 md:overflow-hidden">
+        <div className="flex w-full flex-col md:flex-row">
+          {/* Texto */}
+          <div className="relative flex flex-col justify-center gap-5 px-6 py-12 min-[576px]:px-10 md:w-[46%] md:shrink-0 md:gap-[clamp(0.75rem,2vh,1.25rem)] md:px-14 md:py-[clamp(1.5rem,4vh,3rem)]">
+            <div className="flex items-center gap-3">
+              <Image
+                src="/brand/logo-ayuntamiento.png" alt="Ayuntamiento de San Andrés Tuxtla" width={528} height={256} priority
+                className="h-[clamp(4.5rem,4vw+4vh,9rem)] w-auto"
+              />
+              <p className="text-[0.8125rem] font-semibold tracking-[0.03em] text-[#6b625d]">2026 – 2029</p>
+            </div>
+
+            <h1 className="text-[clamp(2.25rem,4.5vw,3.25rem)] font-extrabold uppercase leading-[0.95] md:text-[clamp(1.75rem,3vw+2vh,3.25rem)]">
+              <span className="block text-guinda">Juventud</span>
+              <span className="block text-dorado">San Andrés</span>
+            </h1>
+
+            <p className="font-cursive text-[clamp(1.5rem,2.75vw,1.875rem)] font-semibold leading-[1.1] md:text-[2.5rem]">
+              <span className="block text-guinda">Tu talento, tu ciudad,</span>
+              <span className="block pl-4 text-dorado">tu futuro.</span>
+            </p>
+
+            <span className="block h-[2px] w-24 rounded-full bg-dorado" aria-hidden="true" />
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Link href="/registro" className={`${ctaCls} bg-guinda text-white shadow-[0_10px_25px_-10px_#58101f80] hover:bg-guinda-900`}>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-dorado"><User size={20} /></span>
+                <span className="text-[1.125rem] font-extrabold tracking-[0.02em]">REGISTRO</span>
+              </Link>
+              <Link href="/ingresar" className={`${ctaCls} bg-transparent text-guinda hover:bg-guinda/[0.06]`}>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-dorado"><LogIn size={20} /></span>
+                <span className="text-[1.125rem] font-extrabold tracking-[0.02em]">INICIAR SESIÓN</span>
+              </Link>
+            </div>
+
+            <p className="fs-5 max-w-[26rem] leading-relaxed text-[#6b625d]">
+              Únete a la comunidad juvenil de <strong className="font-semibold text-guinda">San Andrés Tuxtla</strong> y comienza a disfrutar de beneficios exclusivos, becas, descuentos, eventos y mucho más.
+            </p>
           </div>
 
-          <h1 className="text-5xl font-extrabold uppercase leading-none tracking-tight sm:text-6xl">
-            <span className="block text-guinda">Juventud</span>
-            <span className="block text-dorado">San Andrés</span>
-          </h1>
+          {/* Visual */}
+          <div className="relative h-[100dvh] min-h-[18rem] overflow-hidden bg-guinda md:h-auto md:min-h-0 md:w-[54%]">
+            <Image src="/brand/hero-jovenes.jpg" alt="Jóvenes de San Andrés Tuxtla mostrando su credencial digital." fill priority className="object-cover object-center" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[35%] bg-gradient-to-b from-transparent to-[#0000008c]" />
 
-          <p className="mt-3 font-cursive text-4xl text-guinda">Tu talento, tu ciudad, tu futuro.</p>
+            <span className="absolute right-4 top-4 z-[2] max-w-[13rem] rounded-2xl bg-guinda p-3 text-white shadow-lg">
+              <span className="flex items-center gap-2">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-dorado text-dorado"><Users size={18} /></span>
+                <span className="text-sm font-bold leading-tight">JÓVENES FUERTES,<br />COMUNIDAD FUERTE.</span>
+              </span>
+            </span>
 
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link href="/registro" className="inline-flex items-center gap-2 rounded-full bg-guinda px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition-colors hover:bg-guinda-700">
-              <UserPlus size={16} />Registro
-            </Link>
-            <Link href="/ingresar" className="inline-flex items-center gap-2 rounded-full border-2 border-guinda px-6 py-3 text-sm font-bold uppercase tracking-wide text-guinda transition-colors hover:bg-guinda/5">
-              <LogIn size={16} />Iniciar sesión
-            </Link>
+            <p className="absolute bottom-5 right-5 z-[2] text-right font-cursive text-xl leading-[1.15] text-dorado [text-shadow:0_2px_10px_#00000073]">
+              ¡Juntos construimos<br />una mejor San Andrés Tuxtla!
+            </p>
           </div>
-
-          <p className="mt-6 max-w-md text-sm leading-relaxed text-gray-500">
-            Únete a la comunidad juvenil de <b className="text-guinda">San Andrés Tuxtla</b> y comienza a disfrutar de
-            <b className="text-guinda"> beneficios exclusivos, becas, descuentos</b>, eventos y mucho más.
-          </p>
         </div>
-
-        {/* Hero — imagen derecha */}
-        <div className="relative min-h-[320px] lg:min-h-screen">
-          <Image src="/brand/hero-jovenes.jpg" alt="Jóvenes de San Andrés Tuxtla" fill priority className="object-cover" />
-          <div className="absolute inset-0 bg-guinda/25" />
-          <div className="absolute right-6 top-6 rounded-xl bg-guinda px-4 py-2 text-right text-white shadow-lg">
-            <p className="text-sm font-extrabold uppercase leading-tight">Jóvenes fuertes,<br />economía fuerte.</p>
-          </div>
-        </div>
-      </div>
+      </section>
 
       {/* Franja de features */}
-      <div className="bg-guinda text-white">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-6 px-6 py-8 sm:grid-cols-3 lg:grid-cols-5">
-          {FEATURES.map((feat) => (
-            <div key={feat.label} className="flex flex-col items-center gap-2 text-center">
-              <Image src={feat.icon} alt="" width={48} height={48} className="h-10 w-10 object-contain" />
-              <p className="text-[11px] font-semibold uppercase leading-tight tracking-wide text-white/90">{feat.label}</p>
-            </div>
-          ))}
+      <section className="bg-[linear-gradient(120deg,#58101f_0%,#3d0b14_100%)] py-12 text-white md:shrink-0 md:py-[clamp(1rem,3vh,3rem)]">
+        <div className="mx-auto max-w-6xl px-3">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+            {FEATURES.map((feat, i) => (
+              <div key={i} className="flex flex-col items-center gap-2 text-center md:flex-row md:items-start md:gap-3 md:text-left">
+                <Image src={feat.icon} alt="" width={44} height={44} aria-hidden className="h-11 w-11 shrink-0 object-contain md:h-[clamp(2rem,4vh,2.75rem)] md:w-[clamp(2rem,4vh,2.75rem)]" />
+                <span className="text-[0.8125rem] font-bold uppercase leading-[1.4]">{feat.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
