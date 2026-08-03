@@ -3,12 +3,13 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { QrCode, ReceiptText, LogOut } from 'lucide-react';
+import { QrCode, ReceiptText, User, LogOut } from 'lucide-react';
 import { api } from '../lib/api';
 
 const NAV = [
   { href: '/comercio/validar', label: 'Escanear', icon: QrCode },
   { href: '/comercio/compras', label: 'Compras', icon: ReceiptText },
+  { href: '/comercio/perfil', label: 'Mi perfil', icon: User },
 ];
 
 export function CommerceShell({ children }: { children: React.ReactNode }) {

@@ -12,6 +12,13 @@ type Summary = {
   puntosParaSiguiente: number; porcentaje: number; eventosAsistidos: number; movimientos: Mov[];
 };
 
+const TIPO_LABEL: Record<string, string> = {
+  evento: 'Evento',
+  ajuste: 'Ajuste',
+  compra_comercio: 'Compra en comercio',
+};
+const labelTipo = (tipo: string) => TIPO_LABEL[tipo] ?? tipo;
+
 export default function MisPuntosPage() {
   const router = useRouter();
   const [s, setS] = useState<Summary | null>(null);
@@ -106,7 +113,7 @@ export default function MisPuntosPage() {
             <ul className="divide-y divide-black/5">
               {s.movimientos.map((m) => (
                 <li key={m.id} className="flex items-center justify-between py-3 text-sm">
-                  <span className="capitalize text-ink">{m.tipo}</span>
+                  <span className="text-ink">{labelTipo(m.tipo)}</span>
                   <span className="font-semibold text-success">+{m.puntos}</span>
                 </li>
               ))}

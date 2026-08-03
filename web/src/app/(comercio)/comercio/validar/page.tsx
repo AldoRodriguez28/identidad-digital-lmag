@@ -1,12 +1,12 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { Camera, BadgePercent, CheckCircle2, Receipt, RotateCcw } from 'lucide-react';
+import { Camera, BadgePercent, CheckCircle2, Receipt, RotateCcw, Star } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { api } from '../../../../lib/api';
 import { CommerceShell } from '../../../../components/CommerceShell';
 
 type Preview = { student: { nombreCompleto: string; nivel: string }; porcentajeDescuento: number };
-type Done = Preview & { monto: number; descuento: number; montoFinal: number };
+type Done = Preview & { monto: number; descuento: number; montoFinal: number; puntosOtorgados: number; puntosAcumulados: number };
 
 function extractToken(value: string): string {
   const trimmed = value.trim();
@@ -53,6 +53,7 @@ export default function ComercioValidarPage() {
       const res = await api('/commerce/purchase', { method: 'POST', body: JSON.stringify({ credentialToken: token, monto: Math.round(m * 100) / 100 }) });
       if (!mountedRef.current) return;
       if (res.ok) { setDone(await res.json()); setPreview(null); }
+      else if (res.status === 409) setError('Ya se registró una compra de este cliente hace unos segundos. Espera un momento.');
       else setError('No se pudo registrar la compra.');
     } catch { if (mountedRef.current) setError('No se pudo conectar con el servidor.'); }
   }
@@ -155,6 +156,11 @@ export default function ComercioValidarPage() {
                 <div className="flex justify-between border-t border-black/10 pt-1"><dt className="font-semibold text-ink">Total a cobrar</dt><dd className="text-lg font-extrabold text-success">${done.montoFinal.toFixed(2)}</dd></div>
               </dl>
             </div>
+            {done.puntosOtorgados > 0 && (
+              <div className="mx-auto flex max-w-xs items-center justify-center gap-2 rounded-xl bg-dorado/10 px-4 py-2.5 text-sm font-semibold text-guinda">
+                <Star size={16} className="fill-dorado text-dorado" />+{done.puntosOtorgados} pts para {done.student.nombreCompleto.split(' ')[0]} ({done.puntosAcumulados} en total)
+              </div>
+            )}
             <button onClick={reset} className="inline-flex items-center gap-2 rounded-full bg-guinda px-5 py-2.5 text-sm font-bold text-white hover:bg-guinda-700"><RotateCcw size={16} />Nueva venta</button>
           </div>
         )}

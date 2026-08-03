@@ -38,6 +38,7 @@ export default function RootLayout({
     <html
       lang="es"
       className={`${montserrat.variable} ${caveat.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
         <ServiceWorkerRegister />

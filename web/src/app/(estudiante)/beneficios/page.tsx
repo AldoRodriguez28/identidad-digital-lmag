@@ -6,9 +6,11 @@ import { api } from '../../../lib/api';
 import { StudentShell } from '../../../components/StudentShell';
 import { NivelesTiers } from '../../../components/niveles';
 
-type Benefit = { id: string; nombre: string; descripcion?: string; porcentajeDescuento: number };
+type Benefit = { id: string; nombre: string; descripcion?: string; porcentajeDescuento: number; logo: string | null };
 type Me = { nivel: string; puntosAcumulados: number };
 type Points = { siguiente: string | null; puntosParaSiguiente: number };
+
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 export default function BeneficiosPage() {
   const [benefits, setBenefits] = useState<Benefit[]>([]);
@@ -84,7 +86,12 @@ export default function BeneficiosPage() {
               {benefits.map((b) => (
                 <article key={b.id} className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
                   <div className="flex items-start justify-between gap-2">
-                    <span className="grid h-11 w-11 place-items-center rounded-full bg-guinda/10 text-guinda"><Store size={20} /></span>
+                    {b.logo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={`${BASE}/benefits/${b.id}/logo`} alt={b.nombre} className="h-11 w-11 rounded-full border border-black/5 object-cover" />
+                    ) : (
+                      <span className="grid h-11 w-11 place-items-center rounded-full bg-guinda/10 text-guinda"><Store size={20} /></span>
+                    )}
                     <span className="rounded-full bg-guinda px-3 py-1 text-sm font-bold text-white">{b.porcentajeDescuento}%</span>
                   </div>
                   <h4 className="mt-3 font-bold text-ink">{b.nombre}</h4>

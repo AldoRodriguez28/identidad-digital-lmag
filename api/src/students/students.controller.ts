@@ -10,7 +10,7 @@ import { ResetRequestDto } from './dto/reset-request.dto';
 import { ResetConfirmDto } from './dto/reset-confirm.dto';
 import { StudentGuard } from './student.guard';
 import { CurrentStudent } from './current-student.decorator';
-import { isPngOrJpeg } from './image-signature';
+import { isPngOrJpeg } from '../common/image-signature';
 import { PointsService } from '../points/points.service';
 
 const COOKIE = process.env.SESSION_COOKIE_NAME ?? 'idsid';

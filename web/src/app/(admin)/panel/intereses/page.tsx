@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Dumbbell, Palette, Paintbrush, Cpu } from 'lucide-react';
 import { api } from '../../../../lib/api';
 import { PageHeader, Card, Button, IconButton, Th, Td, inputCls } from '../_components/ui';
 
@@ -14,6 +14,13 @@ const CATS: { value: Categoria; label: string }[] = [
   { value: 'tecnologia', label: 'Tecnología' },
 ];
 const labelOf = (c: Categoria) => CATS.find((x) => x.value === c)?.label ?? c;
+
+const CATEGORY_ICON: Record<Categoria, React.ElementType> = {
+  deporte: Dumbbell,
+  cultura: Palette,
+  arte: Paintbrush,
+  tecnologia: Cpu,
+};
 
 export default function InteresesPage() {
   const [items, setItems] = useState<Interest[]>([]);
@@ -73,10 +80,15 @@ export default function InteresesPage() {
             <tr className="border-b border-black/10"><Th>Interés</Th><Th>Categoría</Th><Th className="text-right">Acciones</Th></tr>
           </thead>
           <tbody>
-            {items.map((i) => (
+            {items.map((i) => {
+              const CategoryIcon = CATEGORY_ICON[i.categoria];
+              return (
               <tr key={i.id} className="border-b border-black/5 last:border-0">
                 <Td className="font-medium">
-                  <span className="inline-flex items-center gap-2"><span className="text-guinda">♥</span>{i.nombre}</span>
+                  <span className="inline-flex items-center gap-2">
+                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-guinda/10 text-guinda"><CategoryIcon size={13} /></span>
+                    {i.nombre}
+                  </span>
                 </Td>
                 <Td>
                   <select
@@ -95,7 +107,8 @@ export default function InteresesPage() {
                   </div>
                 </Td>
               </tr>
-            ))}
+              );
+            })}
             {items.length === 0 && <tr><Td className="py-6 text-center text-gray-400">Aún no hay intereses.</Td></tr>}
           </tbody>
         </table>

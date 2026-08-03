@@ -55,6 +55,7 @@ enum EventoCategoria {
 enum TipoMovimiento {
   evento
   ajuste
+  compra_comercio
 }
 
 enum Modalidad {
