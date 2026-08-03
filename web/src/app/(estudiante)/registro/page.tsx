@@ -20,16 +20,69 @@ function Field({ label, required, children }: { label: string; required?: boolea
   );
 }
 
+const ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg'];
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+function IneUpload({
+  label, file, onChange,
+}: { label: string; file: File | null; onChange: (f: File | null) => void }) {
+  const [preview, setPreview] = useState<string | null>(null);
+  const [localError, setLocalError] = useState('');
+
+  function handleFile(f: File | null) {
+    setLocalError('');
+    if (!f) { onChange(null); setPreview(null); return; }
+    if (!ALLOWED_IMAGE_TYPES.includes(f.type)) { setLocalError('Solo se aceptan imágenes PNG o JPG.'); return; }
+    if (f.size > MAX_IMAGE_BYTES) { setLocalError('La imagen no debe superar 5 MB.'); return; }
+    onChange(f);
+    setPreview(URL.createObjectURL(f));
+  }
+
+  return (
+    <div>
+      <label className="mb-1 block text-sm font-semibold text-ink">{label}<span className="text-danger"> *</span></label>
+      <label className="flex aspect-[16/10] w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-guinda/25 bg-guinda/5 p-3 text-center transition-colors hover:bg-guinda/10">
+        {preview ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={preview} alt={label} className="h-full w-full rounded-lg object-cover" />
+        ) : (
+          <>
+            <span className="text-2xl">🪪</span>
+            <span className="mt-1 text-xs font-semibold text-guinda">Subir foto</span>
+            <span className="text-[11px] text-gray-500">PNG o JPG, máx. 5 MB</span>
+          </>
+        )}
+        <input
+          type="file"
+          accept="image/png,image/jpeg"
+          className="hidden"
+          onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+        />
+      </label>
+      {file && (
+        <button type="button" onClick={() => handleFile(null)} className="mt-1 text-xs font-semibold text-danger hover:underline">
+          Quitar imagen
+        </button>
+      )}
+      {localError && <p className="mt-1 text-xs text-danger">{localError}</p>}
+    </div>
+  );
+}
+
 export default function RegistroPage() {
   const router = useRouter();
   const [f, setF] = useState({
     nombre: '', apellidoPaterno: '', apellidoMaterno: '', fechaNacimiento: '', curp: '', sexo: '', escolaridad: '',
-    correo: '', telefono: '', calle: '', colonia: '', codigoPostal: '', numExt: '', password: '',
-    facebook: '', instagram: '', tiktok: '',
+    correo: '', telefono: '', calle: '', colonia: '', codigoPostal: '', numExt: '', password: '', passwordConfirm: '',
+    facebook: '', instagram: '', tiktok: '', whatsapp: '',
   });
   const [interests, setInterests] = useState<Interest[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
+  const [ineFrente, setIneFrente] = useState<File | null>(null);
+  const [ineReverso, setIneReverso] = useState<File | null>(null);
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     api('/interests').then(async (r) => { if (r.ok) setInterests(await r.json()); }).catch(() => {});
@@ -41,13 +94,44 @@ export default function RegistroPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    if (!ineFrente || !ineReverso) { setError('Sube el frente y el reverso de tu INE.'); return; }
+    if (f.password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres.'); return; }
+    if (f.password !== f.passwordConfirm) { setError('Las contraseñas no coinciden.'); return; }
+    if (!aceptaTerminos) { setError('Debes aceptar los Términos y Condiciones para continuar.'); return; }
+    setSubmitting(true);
     try {
       const nombreCompleto = [f.nombre, f.apellidoPaterno, f.apellidoMaterno].map((x) => x.trim()).filter(Boolean).join(' ');
-      const res = await api('/students/register', { method: 'POST', body: JSON.stringify({ ...f, nombreCompleto, interestIds: selected }) });
-      if (res.ok) router.push('/ingresar');
-      else if (res.status === 409) setError('El correo o CURP ya está registrado.');
-      else setError('Revisa los datos del formulario.');
-    } catch { setError('No se pudo conectar con el servidor.'); }
+      const { passwordConfirm, ...rest } = f;
+      const res = await api('/students/register', { method: 'POST', body: JSON.stringify({ ...rest, nombreCompleto, interestIds: selected }) });
+      if (!res.ok) {
+        setError(res.status === 409 ? 'El correo o CURP ya está registrado.' : 'Revisa los datos del formulario.');
+        return;
+      }
+
+      const loginRes = await api('/students/login', { method: 'POST', body: JSON.stringify({ correo: f.correo, password: f.password }) });
+      if (!loginRes.ok) {
+        router.push('/ingresar');
+        return;
+      }
+
+      const body = new FormData();
+      body.append('ineFrente', ineFrente);
+      body.append('ineReverso', ineReverso);
+      const ineRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/students/me/ine`, {
+        method: 'POST', credentials: 'include', body,
+      });
+      if (!ineRes.ok) {
+        setError('Tu cuenta se creó, pero no se pudo subir tu INE. Inicia sesión para intentarlo de nuevo.');
+        router.push('/ingresar');
+        return;
+      }
+
+      router.push('/perfil');
+    } catch {
+      setError('No se pudo conectar con el servidor.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -85,11 +169,25 @@ export default function RegistroPage() {
               <Field label="Escolaridad" required><input className={authInput} value={f.escolaridad} onChange={(e) => set('escolaridad', e.target.value)} placeholder="Ej. Preparatoria" required /></Field>
             </div>
 
+            <Section title="Identificación oficial (INE)" />
+            <p className="-mt-2 mb-3 text-xs text-gray-500">Sube una foto clara de ambos lados de tu credencial. Se usa para verificar tu identidad.</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <IneUpload label="INE - Frente" file={ineFrente} onChange={setIneFrente} />
+              <IneUpload label="INE - Reverso" file={ineReverso} onChange={setIneReverso} />
+            </div>
+
             <Section title="Contacto y acceso" />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field label="Correo electrónico" required><input className={authInput} type="email" value={f.correo} onChange={(e) => set('correo', e.target.value)} placeholder="tucorreo@ejemplo.com" required /></Field>
               <Field label="Teléfono" required><input className={authInput} value={f.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="10 dígitos" required /></Field>
-              <Field label="Contraseña" required><input className={authInput} type="password" value={f.password} onChange={(e) => set('password', e.target.value)} placeholder="Mínimo 8 caracteres" required /></Field>
+              <Field label="Contraseña" required><input className={authInput} type="password" minLength={8} value={f.password} onChange={(e) => set('password', e.target.value)} placeholder="Mínimo 8 caracteres" required /></Field>
+              <Field label="Confirmar contraseña" required>
+                <input
+                  className={`${authInput} ${f.passwordConfirm && f.password !== f.passwordConfirm ? 'border-danger focus:border-danger focus:ring-danger/15' : ''}`}
+                  type="password" value={f.passwordConfirm} onChange={(e) => set('passwordConfirm', e.target.value)} placeholder="Repite tu contraseña" required
+                />
+                {f.passwordConfirm && f.password !== f.passwordConfirm && <p className="mt-1 text-xs text-danger">Las contraseñas no coinciden.</p>}
+              </Field>
             </div>
 
             <Section title="Domicilio" />
@@ -105,6 +203,7 @@ export default function RegistroPage() {
               <Field label="Facebook"><input className={authInput} value={f.facebook} onChange={(e) => set('facebook', e.target.value)} placeholder="usuario o URL" /></Field>
               <Field label="Instagram"><input className={authInput} value={f.instagram} onChange={(e) => set('instagram', e.target.value)} placeholder="@usuario" /></Field>
               <Field label="TikTok"><input className={authInput} value={f.tiktok} onChange={(e) => set('tiktok', e.target.value)} placeholder="@usuario" /></Field>
+              <Field label="WhatsApp"><input className={authInput} value={f.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} placeholder="10 dígitos" /></Field>
             </div>
 
             <Section title="Intereses" />
@@ -117,9 +216,21 @@ export default function RegistroPage() {
               ))}
             </div>
 
+            <label className="mt-6 flex items-start gap-2 text-sm text-gray-600">
+              <input
+                type="checkbox" required checked={aceptaTerminos}
+                onChange={(e) => setAceptaTerminos(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-guinda focus:ring-guinda/30"
+              />
+              <span>
+                Acepto los <Link href="/terminos" target="_blank" className="font-semibold text-guinda hover:underline">Términos y Condiciones</Link> y el{' '}
+                <Link href="/terminos#privacidad" target="_blank" className="font-semibold text-guinda hover:underline">Aviso de Privacidad</Link>.
+              </span>
+            </label>
+
             {error && <p className="mt-4 text-sm text-danger">{error}</p>}
-            <button type="submit" className="mt-6 w-full rounded-full bg-guinda px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition-colors hover:bg-guinda-700">
-              Crear mi cuenta
+            <button type="submit" disabled={submitting || !f.password || f.password !== f.passwordConfirm || !aceptaTerminos} className="mt-6 w-full rounded-full bg-guinda px-5 py-3 text-sm font-bold uppercase tracking-wide text-white transition-colors hover:bg-guinda-700 disabled:opacity-50">
+              {submitting ? 'Creando cuenta…' : 'Crear mi cuenta'}
             </button>
             <p className="mt-3 text-center text-sm text-gray-500">
               ¿Ya tienes cuenta? <Link href="/ingresar" className="font-semibold text-guinda hover:underline">Inicia sesión</Link>

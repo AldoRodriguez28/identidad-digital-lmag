@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   Award, Lock, GraduationCap, MapPin, Pencil, Plus, CalendarDays,
-  Share2, AtSign, Music2, MessageCircle, Check, X,
+  Share2, AtSign, Music2, MessageCircle,
 } from 'lucide-react';
 import { api } from '../../../lib/api';
 import { StudentShell } from '../../../components/StudentShell';
@@ -19,8 +19,6 @@ type Profile = {
   interests: Interest[]; siguiente: string | null; puntosParaSiguiente: number; porcentaje: number;
 };
 
-const inputCls = 'w-full rounded-lg border border-black/10 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-guinda focus:ring-2 focus:ring-guinda/15';
-
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
@@ -33,33 +31,13 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 export default function PerfilPage() {
   const router = useRouter();
   const [p, setP] = useState<Profile | null>(null);
-  const [allInterests, setAllInterests] = useState<Interest[]>([]);
-  const [editing, setEditing] = useState(false);
-  const [telefono, setTelefono] = useState('');
-  const [selected, setSelected] = useState<string[]>([]);
-  const [msg, setMsg] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  function hydrate(pr: Profile) { setP(pr); setTelefono(pr.telefono); setSelected(pr.interests.map((i) => i.id)); }
 
   useEffect(() => {
     api('/students/me/profile').then(async (r) => {
       if (!r.ok) { router.push('/ingresar'); return; }
-      hydrate(await r.json());
+      setP(await r.json());
     }).catch(() => router.push('/ingresar'));
-    api('/interests').then(async (r) => { if (r.ok) setAllInterests(await r.json()); }).catch(() => {});
   }, [router]);
-
-  function toggle(id: string) { setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id])); }
-  async function save() {
-    setSaving(true); setMsg('');
-    try {
-      const res = await api('/students/me/profile', { method: 'PATCH', body: JSON.stringify({ telefono, interestIds: selected }) });
-      if (res.ok) { hydrate(await res.json()); setEditing(false); setMsg('Perfil actualizado.'); }
-      else setMsg('No se pudo guardar.');
-    } catch { setMsg('Error de red.'); } finally { setSaving(false); }
-  }
-  function cancel() { if (p) hydrate(p); setEditing(false); setMsg(''); }
 
   if (!p) return <StudentShell><p className="text-sm text-gray-500">Cargando…</p></StudentShell>;
 
@@ -123,45 +101,22 @@ export default function PerfilPage() {
                 <span className="flex items-center gap-1"><MapPin size={14} className="text-guinda" />{p.colonia}</span>
               </div>
             </div>
-            {!editing && (
-              <button onClick={() => setEditing(true)} className="inline-flex items-center gap-2 rounded-full border border-guinda/25 px-4 py-2 text-sm font-semibold text-guinda hover:bg-guinda/5">
-                <Pencil size={15} />Editar perfil
-              </button>
-            )}
+            <Link href="/configuracion" className="inline-flex items-center gap-2 rounded-full border border-guinda/25 px-4 py-2 text-sm font-semibold text-guinda hover:bg-guinda/5">
+              <Pencil size={15} />Editar perfil
+            </Link>
           </div>
-
-          {editing && (
-            <div className="mt-5 border-t border-black/5 pt-4">
-              <label className="mb-1 block text-sm font-semibold text-ink">Teléfono</label>
-              <input className={inputCls} value={telefono} onChange={(e) => setTelefono(e.target.value)} />
-              <div className="mt-4 flex gap-2">
-                <button onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-full bg-guinda px-5 py-2.5 text-sm font-semibold text-white hover:bg-guinda-700 disabled:opacity-50"><Check size={15} />{saving ? 'Guardando…' : 'Guardar'}</button>
-                <button onClick={cancel} className="inline-flex items-center gap-2 rounded-full border border-black/10 px-5 py-2.5 text-sm font-semibold text-gray-600 hover:bg-black/5"><X size={15} />Cancelar</button>
-              </div>
-            </div>
-          )}
-          {msg && <p className="mt-3 text-sm text-success">{msg}</p>}
         </div>
 
         {/* 4 tarjetas */}
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Card title="Mis intereses">
             <div className="flex flex-wrap gap-2">
-              {(editing ? allInterests : p.interests).map((i) => {
-                const on = selected.includes(i.id);
-                return editing ? (
-                  <button key={i.id} onClick={() => toggle(i.id)}
-                    className={`rounded-full border px-3 py-1 text-xs transition-colors ${on ? 'border-guinda bg-guinda text-white' : 'border-guinda/25 text-guinda hover:bg-guinda/5'}`}>
-                    {i.nombre}
-                  </button>
-                ) : (
-                  <span key={i.id} className="inline-flex items-center gap-1 rounded-full border border-guinda/20 px-3 py-1 text-xs text-guinda"><span className="text-guinda">♥</span>{i.nombre}</span>
-                );
-              })}
+              {p.interests.length === 0 && <p className="text-sm text-gray-400">Aún no tienes intereses agregados.</p>}
+              {p.interests.map((i) => (
+                <span key={i.id} className="inline-flex items-center gap-1 rounded-full border border-guinda/20 px-3 py-1 text-xs text-guinda"><span className="text-guinda">♥</span>{i.nombre}</span>
+              ))}
             </div>
-            {!editing && (
-              <button onClick={() => setEditing(true)} className="mt-3 inline-flex items-center gap-1 rounded-full border border-guinda/25 px-3 py-1 text-xs font-semibold text-guinda hover:bg-guinda/5"><Plus size={13} />Agregar</button>
-            )}
+            <Link href="/configuracion" className="mt-3 inline-flex items-center gap-1 rounded-full border border-guinda/25 px-3 py-1 text-xs font-semibold text-guinda hover:bg-guinda/5"><Plus size={13} />Agregar o quitar</Link>
           </Card>
 
           <Card title="Mis logros">

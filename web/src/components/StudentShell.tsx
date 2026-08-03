@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   IdCard, CreditCard, CalendarDays, Star, Store, Rocket, GraduationCap, Dumbbell, Palette,
-  Bell, LogOut, LogIn, MessageCircle,
+  Bell, LogOut, LogIn, MessageCircle, Settings,
 } from 'lucide-react';
 import { api } from '../lib/api';
 
@@ -20,6 +20,7 @@ const NAV: NavItem[] = [
   { href: '/educacion', label: 'Educación', icon: GraduationCap },
   { href: '/deporte', label: 'Deporte', icon: Dumbbell },
   { href: '/cultura', label: 'Cultura', icon: Palette },
+  { href: '/configuracion', label: 'Configuración', icon: Settings },
 ];
 
 function initials(nombre: string) {

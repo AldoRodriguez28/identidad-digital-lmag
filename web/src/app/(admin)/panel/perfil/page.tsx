@@ -11,7 +11,7 @@ export default function PerfilAdminPage() {
   const [email, setEmail] = useState('');
   const [savedMsg, setSavedMsg] = useState('');
   const [savedOk, setSavedOk] = useState(false);
-  const [pwd, setPwd] = useState({ currentPassword: '', newPassword: '' });
+  const [pwd, setPwd] = useState({ currentPassword: '', newPassword: '', newPasswordConfirm: '' });
   const [pwdMsg, setPwdMsg] = useState('');
   const [pwdOk, setPwdOk] = useState(false);
 
@@ -30,8 +30,11 @@ export default function PerfilAdminPage() {
 
   async function cambiarPwd(e: React.FormEvent) {
     e.preventDefault(); setPwdMsg('');
-    const res = await api('/admin/me/password', { method: 'POST', body: JSON.stringify(pwd) });
-    if (res.ok) { setPwd({ currentPassword: '', newPassword: '' }); setPwdOk(true); setPwdMsg('Contraseña cambiada.'); }
+    if (pwd.newPassword.length < 8) { setPwdOk(false); setPwdMsg('La nueva contraseña debe tener al menos 8 caracteres.'); return; }
+    if (pwd.newPassword !== pwd.newPasswordConfirm) { setPwdOk(false); setPwdMsg('Las contraseñas no coinciden.'); return; }
+    const { newPasswordConfirm, ...body } = pwd;
+    const res = await api('/admin/me/password', { method: 'POST', body: JSON.stringify(body) });
+    if (res.ok) { setPwd({ currentPassword: '', newPassword: '', newPasswordConfirm: '' }); setPwdOk(true); setPwdMsg('Contraseña cambiada.'); }
     else { setPwdOk(false); setPwdMsg(res.status === 400 ? 'La contraseña actual es incorrecta o la nueva es muy corta.' : 'No se pudo cambiar.'); }
   }
 
@@ -66,10 +69,18 @@ export default function PerfilAdminPage() {
         <form onSubmit={cambiarPwd} className="space-y-3">
           <input className={inputCls} type="password" placeholder="Contraseña actual" required
             value={pwd.currentPassword} onChange={(e) => setPwd({ ...pwd, currentPassword: e.target.value })} />
-          <input className={inputCls} type="password" placeholder="Nueva contraseña (mín. 8)" required
+          <input className={inputCls} type="password" minLength={8} placeholder="Nueva contraseña (mín. 8)" required
             value={pwd.newPassword} onChange={(e) => setPwd({ ...pwd, newPassword: e.target.value })} />
+          <div>
+            <input
+              className={`${inputCls} ${pwd.newPasswordConfirm && pwd.newPassword !== pwd.newPasswordConfirm ? 'border-danger focus:border-danger focus:ring-danger/15' : ''}`}
+              type="password" placeholder="Confirmar nueva contraseña" required
+              value={pwd.newPasswordConfirm} onChange={(e) => setPwd({ ...pwd, newPasswordConfirm: e.target.value })}
+            />
+            {pwd.newPasswordConfirm && pwd.newPassword !== pwd.newPasswordConfirm && <p className="mt-1 text-xs text-danger">Las contraseñas no coinciden.</p>}
+          </div>
           {pwdMsg && <p className={`text-sm ${pwdOk ? 'text-success' : 'text-danger'}`}>{pwdMsg}</p>}
-          <Button type="submit" variant="outline">Cambiar contraseña</Button>
+          <Button type="submit" variant="outline" disabled={!pwd.newPassword || pwd.newPassword !== pwd.newPasswordConfirm}>Cambiar contraseña</Button>
         </form>
       </Card>
     </div>

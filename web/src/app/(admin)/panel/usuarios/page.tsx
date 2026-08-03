@@ -8,7 +8,7 @@ type User = { id: string; email: string; nombre: string; rol: 'admin' | 'gestor'
 
 export default function UsuariosPage() {
   const [items, setItems] = useState<User[]>([]);
-  const [f, setF] = useState({ email: '', nombre: '', rol: 'gestor', password: '' });
+  const [f, setF] = useState({ email: '', nombre: '', rol: 'gestor', password: '', passwordConfirm: '' });
   const [showForm, setShowForm] = useState(false);
   const [q, setQ] = useState('');
   const [error, setError] = useState('');
@@ -22,8 +22,11 @@ export default function UsuariosPage() {
   async function crear(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    const res = await api('/admin/internal-users', { method: 'POST', body: JSON.stringify(f) });
-    if (res.ok) { setF({ email: '', nombre: '', rol: 'gestor', password: '' }); setShowForm(false); await load(); }
+    if (f.password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres.'); return; }
+    if (f.password !== f.passwordConfirm) { setError('Las contraseñas no coinciden.'); return; }
+    const { passwordConfirm, ...rest } = f;
+    const res = await api('/admin/internal-users', { method: 'POST', body: JSON.stringify(rest) });
+    if (res.ok) { setF({ email: '', nombre: '', rol: 'gestor', password: '', passwordConfirm: '' }); setShowForm(false); await load(); }
     else if (res.status === 409) setError('Ese correo ya existe.');
     else setError('Revisa los datos.');
   }
@@ -66,8 +69,16 @@ export default function UsuariosPage() {
               <option value="gestor">Gestor</option>
               <option value="admin">Administrador</option>
             </select>
-            <input className={inputCls} placeholder="Contraseña (mín. 8)" type="password" required value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} />
-            <div className="sm:col-span-2"><Button type="submit">Crear usuario</Button></div>
+            <input className={inputCls} placeholder="Contraseña (mín. 8)" type="password" minLength={8} required value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} />
+            <div>
+              <input
+                className={`${inputCls} ${f.passwordConfirm && f.password !== f.passwordConfirm ? 'border-danger focus:border-danger focus:ring-danger/15' : ''}`}
+                placeholder="Confirmar contraseña" type="password" required
+                value={f.passwordConfirm} onChange={(e) => setF({ ...f, passwordConfirm: e.target.value })}
+              />
+              {f.passwordConfirm && f.password !== f.passwordConfirm && <p className="mt-1 text-xs text-danger">Las contraseñas no coinciden.</p>}
+            </div>
+            <div className="sm:col-span-2"><Button type="submit" disabled={!f.password || f.password !== f.passwordConfirm}>Crear usuario</Button></div>
           </form>
         </Card>
       )}
