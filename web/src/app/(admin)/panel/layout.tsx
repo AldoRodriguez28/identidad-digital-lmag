@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   Home, IdCard, Users, GraduationCap, Heart, Store,
-  CalendarDays, BookOpen, Briefcase, Bell, LogOut, MessageCircle, Palette,
+  CalendarDays, BookOpen, Briefcase, Bell, LogOut, MessageCircle, Palette, Menu, X,
 } from 'lucide-react';
 import { api } from '../../../lib/api';
 
@@ -34,6 +34,8 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const [me, setMe] = useState<Me | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [prevPathname, setPrevPathname] = useState(pathname);
 
   useEffect(() => {
     api('/auth/me').then(async (r) => {
@@ -41,6 +43,16 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       else router.push('/ingresar');
     }).catch(() => router.push('/ingresar'));
   }, [router]);
+
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setMobileOpen(false);
+  }
+
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
 
   async function logout() {
     await api('/auth/logout', { method: 'POST' });
@@ -53,9 +65,19 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex min-h-screen bg-page">
+      {mobileOpen && (
+        <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setMobileOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside className="hidden w-72 shrink-0 flex-col bg-guinda text-white md:flex">
-        <div className="px-6 py-6">
+      <aside
+        className={[
+          'fixed inset-y-0 left-0 z-40 flex w-72 shrink-0 flex-col bg-guinda text-white transition-transform duration-200 ease-in-out',
+          'md:static md:translate-x-0',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+        ].join(' ')}
+      >
+        <div className="flex items-center justify-between px-6 py-6">
           <Image
             src="/brand/logo-ayuntamiento.png"
             alt="Ayuntamiento de San Andrés Tuxtla"
@@ -64,6 +86,9 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
             priority
             className="h-auto w-44 brightness-0 invert"
           />
+          <button onClick={() => setMobileOpen(false)} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-white/80 hover:bg-white/10 md:hidden" aria-label="Cerrar menú">
+            <X size={20} />
+          </button>
         </div>
 
         <nav className="mt-2 flex-1 space-y-1 px-3">
@@ -73,6 +98,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
               <Link
                 key={href}
                 href={href}
+                onClick={() => setMobileOpen(false)}
                 className={[
                   'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                   active ? 'bg-dorado text-guinda-900 font-semibold shadow-sm' : 'text-white/85 hover:bg-white/10',
@@ -100,16 +126,21 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
       {/* Main */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 items-center justify-end gap-3 px-6">
-          <button className="relative grid h-10 w-10 place-items-center rounded-full text-guinda ring-1 ring-guinda/20 hover:bg-guinda/5" aria-label="Notificaciones">
-            <Bell size={18} />
+        <header className="flex h-16 items-center justify-between gap-3 px-4 md:justify-end md:px-6">
+          <button onClick={() => setMobileOpen(true)} className="grid h-10 w-10 place-items-center rounded-full text-guinda ring-1 ring-guinda/20 hover:bg-guinda/5 md:hidden" aria-label="Abrir menú">
+            <Menu size={20} />
           </button>
-          <span className="grid h-10 w-10 place-items-center rounded-full bg-guinda text-sm font-semibold text-white" title={`${me.nombre} (${me.rol})`}>
-            {initials(me.nombre)}
-          </span>
-          <button onClick={logout} className="grid h-10 w-10 place-items-center rounded-full text-guinda ring-1 ring-guinda/20 hover:bg-guinda/5" aria-label="Salir">
-            <LogOut size={18} />
-          </button>
+          <div className="flex items-center gap-3">
+            <button className="relative grid h-10 w-10 place-items-center rounded-full text-guinda ring-1 ring-guinda/20 hover:bg-guinda/5" aria-label="Notificaciones">
+              <Bell size={18} />
+            </button>
+            <span className="grid h-10 w-10 place-items-center rounded-full bg-guinda text-sm font-semibold text-white" title={`${me.nombre} (${me.rol})`}>
+              {initials(me.nombre)}
+            </span>
+            <button onClick={logout} className="grid h-10 w-10 place-items-center rounded-full text-guinda ring-1 ring-guinda/20 hover:bg-guinda/5" aria-label="Salir">
+              <LogOut size={18} />
+            </button>
+          </div>
         </header>
 
         <main className="flex-1 px-6 pb-10">{children}</main>

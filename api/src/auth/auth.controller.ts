@@ -4,8 +4,8 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { SessionGuard } from './session.guard';
 import { CurrentUser } from './current-user.decorator';
+import { SESSION_COOKIE_NAME as COOKIE, sessionCookieOptions } from '../common/session-cookie';
 
-const COOKIE = process.env.SESSION_COOKIE_NAME ?? 'idsid';
 const DAY = 24 * 60 * 60 * 1000;
 
 @Controller('auth')
@@ -15,24 +15,14 @@ export class AuthController {
   @Post('login')
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const { session, user } = await this.auth.login(dto.email, dto.password, !!dto.remember);
-    res.cookie(COOKIE, session.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: dto.remember ? 7 * DAY : DAY,
-    });
+    res.cookie(COOKIE, session.id, sessionCookieOptions(dto.remember ? 7 * DAY : DAY));
     return user;
   }
 
   @Post('ingresar')
   async ingresar(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const { session, tipo, redirect } = await this.auth.loginUniversal(dto.email, dto.password, !!dto.remember);
-    res.cookie(COOKIE, session.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: dto.remember ? 7 * DAY : DAY,
-    });
+    res.cookie(COOKIE, session.id, sessionCookieOptions(dto.remember ? 7 * DAY : DAY));
     return { tipo, redirect };
   }
 
@@ -40,7 +30,7 @@ export class AuthController {
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const sid = req.cookies?.[COOKIE];
     if (sid) await this.auth.logout(sid);
-    res.clearCookie(COOKIE, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+    res.clearCookie(COOKIE, sessionCookieOptions());
     return { ok: true };
   }
 

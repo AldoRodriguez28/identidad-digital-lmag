@@ -13,8 +13,8 @@ import { CommerceChangePasswordDto } from './dto/commerce-change-password.dto';
 import { CommerceGuard } from './commerce.guard';
 import { CurrentCommerce } from './current-commerce.decorator';
 import { isPngOrJpeg } from '../common/image-signature';
+import { SESSION_COOKIE_NAME as COOKIE, sessionCookieOptions } from '../common/session-cookie';
 
-const COOKIE = process.env.SESSION_COOKIE_NAME ?? 'idsid';
 const DAY = 24 * 60 * 60 * 1000;
 
 @Controller('commerce')
@@ -24,10 +24,7 @@ export class CommerceController {
   @Post('login')
   async login(@Body() dto: CommerceLoginDto, @Res({ passthrough: true }) res: Response) {
     const { session, view } = await this.commerce.login(dto.email, dto.password, !!dto.remember);
-    res.cookie(COOKIE, session.id, {
-      httpOnly: true, secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax', maxAge: dto.remember ? 7 * DAY : DAY,
-    });
+    res.cookie(COOKIE, session.id, sessionCookieOptions(dto.remember ? 7 * DAY : DAY));
     return view;
   }
 
@@ -35,7 +32,7 @@ export class CommerceController {
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const sid = req.cookies?.[COOKIE];
     if (sid) await this.commerce.logout(sid);
-    res.clearCookie(COOKIE, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+    res.clearCookie(COOKIE, sessionCookieOptions());
     return { ok: true };
   }
 

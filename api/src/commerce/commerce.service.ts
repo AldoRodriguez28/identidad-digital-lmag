@@ -162,10 +162,11 @@ export class CommerceService {
     return { logo };
   }
 
-  async getLogoPath(id: string) {
+  async getLogoFile(id: string) {
     const c = await this.prisma.commerce.findUnique({ where: { id }, select: { logo: true } });
     if (!c?.logo) throw new NotFoundException();
     const contentType = c.logo.endsWith('.png') ? 'image/png' : c.logo.endsWith('.jpg') ? 'image/jpeg' : 'application/octet-stream';
-    return { path: this.storage.getPath(c.logo), contentType };
+    const buffer = await this.storage.get(c.logo);
+    return { buffer, contentType };
   }
 }
