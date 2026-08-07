@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { CategoriaInteres } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
+import { decryptIne } from '../common/ine-crypto';
 
 @Injectable()
 export class AdminService {
@@ -123,7 +124,7 @@ export class AdminService {
     await this.prisma.interest.delete({ where: { id } });
   }
 
-  async getInePath(id: string, side: string) {
+  async getIneFile(id: string, side: string): Promise<{ buffer: Buffer; contentType: string }> {
     if (side !== 'frente' && side !== 'reverso') throw new BadRequestException('side inválido');
     const s = await this.prisma.student.findUnique({
       where: { id }, select: { ineFrente: true, ineReverso: true },
@@ -131,6 +132,7 @@ export class AdminService {
     const key = side === 'frente' ? s?.ineFrente : s?.ineReverso;
     if (!key) throw new NotFoundException();
     const contentType = key.endsWith('.png') ? 'image/png' : key.endsWith('.jpg') ? 'image/jpeg' : 'application/octet-stream';
-    return { path: this.storage.getPath(key), contentType };
+    const sealed = await this.storage.get(key);
+    return { buffer: decryptIne(sealed), contentType };
   }
 }

@@ -1,6 +1,28 @@
 # Estado del proyecto — para continuar
 
-> Última actualización: 2026-07-25. HEAD: `79d8e37`. Rama: `master` (sin remoto).
+> Última actualización: 2026-08-05. HEAD: `94db9d7`. Rama: `festure-050826-modulo-carrera` (recién creada desde `main`, mismo commit).
+
+## 📱 Sesión 2026-08-05 — Menú móvil (punto 3 del pendiente de abajo)
+
+Los sidebars de `StudentShell`, el panel admin (`(admin)/panel/layout.tsx`) y `SiteHeader` (no usado en ninguna ruta actual — código muerto) eran `hidden md:flex`: en celular no había forma de navegar. Se agregó menú hamburguesa + drawer deslizable con overlay (cierra al tocar fuera, al navegar, o con botón X), respetando el layout desktop intacto (`md:static md:translate-x-0`). Verificado visualmente con Playwright (viewport 390×844) en `/eventos` (logueado y no logueado), `/panel` (admin) y confirmando que el desktop (1280px) no cambió. Sin errores de consola, lint y `tsc --noEmit` limpios en los archivos tocados.
+
+**Nota de infra para la próxima sesión:** el puerto `3001` (default de la API) está ocupado por otro proyecto (`apex-hoops`) corriendo en esta máquina. Para levantar la API localmente sin chocar, usar `PORT=3011 npm run start:dev` en `api/` y `NEXT_PUBLIC_API_URL=http://localhost:3011 npm run dev` en `web/` (o liberar el 3001). No se persistió en `.env.local` — decidir con el usuario si se quiere fijo.
+
+## 🔐 Sesión 2026-08-05 (cont.) — Cifrado de INE en reposo (RELEASE-BLOCKER, punto 1)
+
+Las imágenes de INE se guardaban en texto plano en `var/storage` (o R2 a futuro), legibles por cualquiera con acceso al disco/bucket — violación directa del brief §7 (LGPDPPSO). Se agregó cifrado a nivel de aplicación, independiente del backend de storage:
+
+- **`api/src/common/ine-crypto.ts`** (nuevo): `encryptIne`/`decryptIne` con AES-256-GCM. Formato del blob: `iv(12) + authTag(16) + ciphertext`. Clave desde `INE_ENCRYPTION_KEY` (env, base64 de 32 bytes) — sin esa var, la app **no arranca** (`assertIneEncryptionKey()` en `main.ts`, fail-fast).
+- **`StorageService`**: se agregó `get(key): Promise<Buffer>` (antes solo existía `getPath()`, que da una ruta de disco — no sirve para leer bytes cifrados ni es compatible con R2). `LocalDiskStorage.get()` implementado con `readFileSync`.
+- **`students.service.ts` `saveIne()`**: cifra frente/reverso antes de `storage.put()`.
+- **`admin.service.ts`**: `getInePath()` renombrado a `getIneFile()` — ahora lee bytes vía `storage.get()`, descifra con `decryptIne()` y devuelve `Buffer` (ya no una ruta de archivo).
+- **`students-admin.controller.ts`**: el endpoint `GET /admin/students/:id/ine/:side` sirve el `Buffer` descifrado vía `StreamableFile` (antes hacía `createReadStream` directo del disco).
+- El logo público de comercios (`commerce.service.ts`, endpoint sin guard en `benefits.controller.ts`) **no se cifra** — es un asset público, no dato sensible; sigue usando `getPath()` sin cambios.
+- La restricción de acceso (admin/gestor + `SessionGuard`) ya existía desde Plan 05 y no cambió.
+
+**Verificado real, no solo tests:** subida + verificación manual con curl contra la API viva — el archivo en `var/storage` ya NO empieza con la firma PNG (`89 50 4E 47`), son bytes ilegibles; `GET /admin/students/:id/ine/:side` con sesión admin devuelve el PNG original correctamente descifrado. Unit 25/25 (+1 test de `LocalDiskStorage.get`), e2e 100/100, sin regresiones.
+
+**Pendiente relacionado (no bloqueante):** el env real de producción necesita su propia `INE_ENCRYPTION_KEY` generada aparte (nunca reusar la de dev) — documentar en el runbook de deploy del Plan 10. La adopción de R2 (Plan 10 backlog) hereda el cifrado gratis ya que ocurre antes de `storage.put()`.
 
 ## Roadmap (≈10 planes; 01–09 hechos)
 01 Fundamentos✅ · 02 Estudiante✅ · 03 Credencial/INE/reset✅ · 04 Comercios✅ · 05 Panel admin base✅ · 06 Panel admin cuentas✅ · 07 Puntos+Eventos+check-in✅ · 08 Cursos/talleres+Bolsa de trabajo✅ · 09 PWA✅ · **10 Hardening+despliegue (siguiente)**.
@@ -22,9 +44,9 @@ Se clonó el diseño del sitio de referencia (San Andrés Tuxtla) y se agregaron
 - Fix: `mountedRef` reseteado en escáneres (StrictMode dev descartaba respuestas → "no hacía nada").
 
 ## 🔎 PENDIENTE (revisión 2026-07-25, por prioridad)
-1. **RELEASE-BLOCKER:** cifrar INE en reposo + restringir R2 (LGPDPPSO, brief §7).
+1. ~~**RELEASE-BLOCKER:** cifrar INE en reposo + restringir R2 (LGPDPPSO, brief §7).~~ ✅ Cifrado en reposo resuelto 2026-08-05 (ver sesión arriba). La restricción de acceso ya existía. Pendiente solo generar `INE_ENCRYPTION_KEY` de producción al desplegar.
 2. **Plan 10 hardening/deploy:** CORS allowlist por env (hoy `origin:true`), purga de sesiones, adaptadores R2/Resend, HTTPS (lo exige la PWA), definir hosting (Railway vs VPS).
-3. **📱 Menú móvil:** los sidebars son `hidden md:flex` → en celular NO hay navegación (es PWA para jóvenes → importante). Falta hamburguesa.
+3. ~~**📱 Menú móvil:** los sidebars son `hidden md:flex` → en celular NO hay navegación.~~ ✅ Resuelto 2026-08-05 (ver sesión arriba).
 4. **Recursos sin e2e** (educación/deporte/cultura no cubierto por tests).
 5. **INE en el registro** (el original la pide al registrarse; nosotros aparte).
 6. **Correo único solo al crear**, falta en ediciones (helper ya soporta `exclude`).
@@ -71,7 +93,7 @@ Se clonó el diseño del sitio de referencia (San Andrés Tuxtla) y se agregaron
 - `StorageService` (adaptador local, R2-ready) + subida de INE `POST /students/me/ine` (multipart, valida magic bytes + ≤5MB, `StudentGuard`) — solo almacena, sin descarga pública.
 - Credencial pública `GET /c/:token` (token opaco, expone SOLO nombre/nivel/edad/escolaridad/colonia/intereses/redes) + página `/c/[token]`.
 - `EmailService` (dev/consola, Resend-ready) + reset de contraseña sin enumeración, tokens single-use + expiración 1h + cierre atómico; páginas `/recuperar` y `/recuperar/[token]`.
-- **RELEASE-BLOCKER (no de merge):** antes de producción con INE real, activar cifrado en reposo + restricción R2 (spec §7, LGPDPPSO).
+- ~~RELEASE-BLOCKER: activar cifrado en reposo~~ ✅ resuelto 2026-08-05, ver sesión arriba.
 
 ### Plan 02 (nuevo) — entregado:
 - **Sesión de servidor polimórfica** (`internal_user | student`): admin y estudiante comparten cookie `idsid`, separados por `principalType` (probado: cookie de un principal no accede al endpoint del otro → 401).
@@ -124,8 +146,7 @@ Verificación real (no solo build):
 - **Verificación real:** unit 24/24, e2e 81/81 (`maxWorkers:1`), sin regresiones; `web build` OK con las 4 rutas nuevas. Falta verificación E2E manual con cámara (Task 6 Step 3) contra API+web vivas.
 
 ## Próximo paso: Plan 10 (por escribir) — último del roadmap
-**Plan 10 — Hardening + despliegue.** **RELEASE-BLOCKER:** cifrado en reposo del INE + restricción R2 (spec §7, LGPDPPSO). Además, backlog acumulado pre-deploy: CORS allowlist por env (hoy `origin:true`), purga de sesiones expiradas, adaptadores R2/Resend, HTTPS (requerido por el SW de la PWA), y los backlogs menores de planes previos (incl. caché `/c/` sin TTL de Plan 09, "Hibrido" sin acento de Plan 08). Definir hosting (Railway vs VPS). Escribir con `writing-plans`.
-> **RELEASE-BLOCKER vigente:** cifrado en reposo del INE + restricción R2 antes de producción con INE real (spec §7, LGPDPPSO).
+**Plan 10 — Hardening + despliegue.** ~~RELEASE-BLOCKER: cifrado en reposo del INE~~ ✅ resuelto 2026-08-05 (app-level AES-256-GCM, ver sesión arriba); falta generar la `INE_ENCRYPTION_KEY` de producción al desplegar. Backlog acumulado pre-deploy: CORS allowlist por env (hoy `origin:true`), purga de sesiones expiradas, adaptadores R2/Resend (el cifrado ya viaja con ellos, ocurre antes de `storage.put()`), HTTPS (requerido por el SW de la PWA), y los backlogs menores de planes previos (incl. caché `/c/` sin TTL de Plan 09, "Hibrido" sin acento de Plan 08). Definir hosting (Railway vs VPS). Escribir con `writing-plans`.
 
 ## Referencias
 - Spec MVP: `docs/superpowers/specs/2026-07-20-mvp-identidad-digital-design.md`

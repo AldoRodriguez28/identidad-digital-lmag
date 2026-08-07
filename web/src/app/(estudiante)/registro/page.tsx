@@ -26,8 +26,8 @@ function Section({ title, first, children }: { title?: string; first?: boolean; 
 }
 
 function Field({
-  label, icon: Icon, required, full, children,
-}: { label: string; icon?: React.ElementType; required?: boolean; full?: boolean; children: React.ReactNode }) {
+  label, icon: Icon, required, full, error, children,
+}: { label: string; icon?: React.ElementType; required?: boolean; full?: boolean; error?: string; children: React.ReactNode }) {
   return (
     <div className={`flex min-w-0 flex-col gap-1.5 ${full ? 'min-[576px]:col-span-2' : ''}`}>
       <label className="flex items-center gap-2 text-sm font-semibold" style={{ color: INK }}>
@@ -36,6 +36,7 @@ function Field({
         {required && <span className="text-guinda">*</span>}
       </label>
       {children}
+      {error && <p className="text-[0.8125rem]" style={{ color: '#b3261e' }}>{error}</p>}
     </div>
   );
 }
@@ -43,9 +44,12 @@ function Field({
 const inputCls =
   'block w-full rounded-md border bg-[#f8f7f4] px-3 py-1.5 text-base outline-none transition-colors focus:border-[#ac888f] focus:ring-4 focus:ring-guinda/25';
 const inputStyle = { borderColor: '#dbdfe6', color: INK };
+const errorInputStyle = { borderColor: '#b3261e', color: INK };
 const fileInputCls = `${inputCls} cursor-pointer py-2 file:mr-3 file:rounded file:border-0 file:bg-guinda file:px-3 file:py-1 file:text-xs file:font-semibold file:text-white`;
 
-function IneFileInput({ id, value, onChange }: { id: string; value: File | null; onChange: (f: File | null) => void }) {
+function IneFileInput({
+  id, value, onChange, hasError, onFormatError,
+}: { id: string; value: File | null; onChange: (f: File | null) => void; hasError?: boolean; onFormatError: () => void }) {
   const [preview, setPreview] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,9 +62,18 @@ function IneFileInput({ id, value, onChange }: { id: string; value: File | null;
   return (
     <div>
       <input
-        id={id} type="file" accept="image/*" required={!value}
-        className={fileInputCls} style={inputStyle}
-        onChange={(e) => onChange(e.target.files?.[0] ?? null)}
+        id={id} type="file" accept="image/png,image/jpeg" required={!value}
+        className={fileInputCls} style={hasError ? errorInputStyle : inputStyle}
+        onChange={(e) => {
+          const file = e.target.files?.[0] ?? null;
+          if (file && file.type !== 'image/png' && file.type !== 'image/jpeg') {
+            e.target.value = '';
+            onChange(null);
+            onFormatError();
+            return;
+          }
+          onChange(file);
+        }}
       />
       {preview && (
         // eslint-disable-next-line @next/next/no-img-element
@@ -68,6 +81,34 @@ function IneFileInput({ id, value, onChange }: { id: string; value: File | null;
       )}
     </div>
   );
+}
+
+// Mapea un mensaje de error del backend (o de validación local) al/los campo(s) del formulario
+// al que se refiere, buscando palabras clave. "frente"/"reverso" ganan siempre primero porque
+// los mensajes de INE también contienen "imagen", que si no se cae al fallback genérico marcaría los dos lados a la vez.
+const FIELD_KEYWORDS: [string, string[]][] = [
+  ['curp', ['curp']],
+  ['correo', ['correo', 'email']],
+  ['telefono', ['telefono', 'teléfono']],
+  ['fechaNacimiento', ['fechanacimiento', 'fecha de nacimiento']],
+  ['codigoPostal', ['codigopostal', 'código postal']],
+  ['calle', ['calle']],
+  ['colonia', ['colonia']],
+  ['numExt', ['numext']],
+  ['sexo', ['sexo']],
+  ['escolaridad', ['escolaridad']],
+  ['nombreCompleto', ['nombrecompleto']],
+  ['password', ['contraseña', 'password']],
+];
+
+function fieldsForMessage(msg: string): string[] {
+  const lower = msg.toLowerCase();
+  if (lower.includes('frente')) return ['ineFrente'];
+  if (lower.includes('reverso')) return ['ineReverso'];
+  const specific = FIELD_KEYWORDS.filter(([, keywords]) => keywords.some((k) => lower.includes(k)));
+  if (specific.length) return [...new Set(specific.map(([field]) => field))];
+  if (lower.includes('ine') || lower.includes('imagen') || lower.includes('identificación')) return ['ineFrente', 'ineReverso'];
+  return [];
 }
 
 export default function RegistroPage() {
@@ -83,44 +124,75 @@ export default function RegistroPage() {
   const [ineReverso, setIneReverso] = useState<File | null>(null);
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     api('/interests').then(async (r) => { if (r.ok) setInterests(await r.json()); }).catch(() => {});
   }, []);
 
-  function set(k: string, v: string) { setF((prev) => ({ ...prev, [k]: v })); }
+  function set(k: string, v: string) {
+    setF((prev) => ({ ...prev, [k]: v }));
+    setFieldErrors((prev) => (prev[k] ? { ...prev, [k]: '' } : prev));
+  }
   function toggle(id: string) { setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id])); }
+  function inputStyleFor(k: string) { return fieldErrors[k] ? errorInputStyle : inputStyle; }
+  function setIne(which: 'ineFrente' | 'ineReverso', file: File | null) {
+    (which === 'ineFrente' ? setIneFrente : setIneReverso)(file);
+    setFieldErrors((prev) => (prev[which] ? { ...prev, [which]: '' } : prev));
+  }
 
+  async function extractErrors(res: Response, fallback: string): Promise<{ banner: string; fields: Record<string, string> }> {
+    let messages: string[] = [];
+    try {
+      const body = await res.json();
+      if (Array.isArray(body?.message)) messages = body.message;
+      else if (typeof body?.message === 'string') messages = [body.message];
+    } catch {
+      // respuesta sin JSON válido: se usa el fallback
+    }
+    if (!messages.length) messages = [fallback];
+    const fields: Record<string, string> = {};
+    for (const msg of messages) {
+      for (const key of fieldsForMessage(msg)) fields[key] = msg;
+    }
+    return { banner: messages.join(' '), fields };
+  }
+
+  // Registro atómico: mientras el INE no se valide en el servidor, no se crea ninguna cuenta.
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    if (!ineFrente || !ineReverso) { setError('Sube el frente y el reverso de tu INE.'); return; }
-    if (f.password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres.'); return; }
-    if (f.password !== f.passwordConfirm) { setError('Las contraseñas no coinciden.'); return; }
+    const localErrors: Record<string, string> = {};
+    if (!ineFrente) localErrors.ineFrente = 'Sube el frente de tu INE.';
+    if (!ineReverso) localErrors.ineReverso = 'Sube el reverso de tu INE.';
+    if (f.password.length < 8) localErrors.password = 'La contraseña debe tener al menos 8 caracteres.';
+    if (f.password !== f.passwordConfirm) localErrors.passwordConfirm = 'Las contraseñas no coinciden.';
+    if (Object.keys(localErrors).length) {
+      setFieldErrors(localErrors);
+      setError('Revisa los campos marcados en rojo.');
+      return;
+    }
     if (!aceptaTerminos) { setError('Debes aceptar los Términos y Condiciones para continuar.'); return; }
+    setFieldErrors({});
     setSubmitting(true);
     try {
       const nombreCompleto = [f.nombre, f.apellidoPaterno, f.apellidoMaterno].map((x) => x.trim()).filter(Boolean).join(' ');
       const { passwordConfirm, ...rest } = f;
-      const res = await api('/students/register', { method: 'POST', body: JSON.stringify({ ...rest, nombreCompleto, interestIds: selected }) });
-      if (!res.ok) {
-        setError(res.status === 409 ? 'El correo o CURP ya está registrado.' : 'Revisa los datos del formulario.');
-        return;
-      }
-
-      const loginRes = await api('/students/login', { method: 'POST', body: JSON.stringify({ correo: f.correo, password: f.password }) });
-      if (!loginRes.ok) { router.push('/ingresar'); return; }
 
       const body = new FormData();
-      body.append('ineFrente', ineFrente);
-      body.append('ineReverso', ineReverso);
-      const ineRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/students/me/ine`, {
+      Object.entries({ ...rest, nombreCompleto }).forEach(([k, v]) => body.append(k, v));
+      body.append('interestIds', JSON.stringify(selected));
+      body.append('ineFrente', ineFrente!);
+      body.append('ineReverso', ineReverso!);
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/students/register`, {
         method: 'POST', credentials: 'include', body,
       });
-      if (!ineRes.ok) {
-        setError('Tu cuenta se creó, pero no se pudo subir tu INE. Inicia sesión para intentarlo de nuevo.');
-        router.push('/ingresar');
+      if (!res.ok) {
+        const { banner, fields } = await extractErrors(res, 'Revisa los datos del formulario.');
+        setError(Object.keys(fields).length ? 'Revisa los campos marcados en rojo.' : banner);
+        setFieldErrors(fields);
         return;
       }
 
@@ -172,15 +244,15 @@ export default function RegistroPage() {
                 <Field label="Apellido materno" icon={PenLine} required>
                   <input className={inputCls} style={inputStyle} value={f.apellidoMaterno} onChange={(e) => set('apellidoMaterno', e.target.value)} placeholder="Apellido materno" required />
                 </Field>
-                <Field label="Fecha de nacimiento" icon={CalendarDays} required>
-                  <input className={inputCls} style={inputStyle} type="date" value={f.fechaNacimiento} onChange={(e) => set('fechaNacimiento', e.target.value)} required />
+                <Field label="Fecha de nacimiento" icon={CalendarDays} required error={fieldErrors.fechaNacimiento}>
+                  <input className={inputCls} style={inputStyleFor('fechaNacimiento')} type="date" value={f.fechaNacimiento} onChange={(e) => set('fechaNacimiento', e.target.value)} required />
                 </Field>
-                <Field label="CURP" icon={IdCard} required>
-                  <input className={`${inputCls} uppercase`} style={inputStyle} value={f.curp} onChange={(e) => set('curp', e.target.value)} maxLength={18} placeholder="18 caracteres" required />
+                <Field label="CURP" icon={IdCard} required error={fieldErrors.curp}>
+                  <input className={`${inputCls} uppercase`} style={inputStyleFor('curp')} value={f.curp} onChange={(e) => set('curp', e.target.value)} maxLength={18} placeholder="18 caracteres" required />
                 </Field>
-                <Field label="Sexo" icon={VenusAndMars} required>
+                <Field label="Sexo" icon={VenusAndMars} required error={fieldErrors.sexo}>
                   <div className="relative">
-                    <select className={`${inputCls} appearance-none pr-9`} style={inputStyle} value={f.sexo} onChange={(e) => set('sexo', e.target.value)} required>
+                    <select className={`${inputCls} appearance-none pr-9`} style={inputStyleFor('sexo')} value={f.sexo} onChange={(e) => set('sexo', e.target.value)} required>
                       <option value="">Selecciona una opción</option>
                       <option value="Femenino">Femenino</option>
                       <option value="Masculino">Masculino</option>
@@ -194,28 +266,36 @@ export default function RegistroPage() {
 
             <Section title="Identificación (INE)">
               <div className="grid grid-cols-1 gap-x-6 gap-y-5 min-[576px]:grid-cols-2">
-                <Field label="INE (frente)" icon={CreditCard}>
-                  <IneFileInput id="ine_front" value={ineFrente} onChange={setIneFrente} />
+                <Field label="INE (frente)" icon={CreditCard} error={fieldErrors.ineFrente}>
+                  <IneFileInput
+                    id="ine_front" value={ineFrente} onChange={(file) => setIne('ineFrente', file)}
+                    hasError={!!fieldErrors.ineFrente}
+                    onFormatError={() => setFieldErrors((p) => ({ ...p, ineFrente: 'Solo se aceptan imágenes JPG o PNG.' }))}
+                  />
                 </Field>
-                <Field label="INE (reverso)" icon={CreditCard}>
-                  <IneFileInput id="ine_back" value={ineReverso} onChange={setIneReverso} />
+                <Field label="INE (reverso)" icon={CreditCard} error={fieldErrors.ineReverso}>
+                  <IneFileInput
+                    id="ine_back" value={ineReverso} onChange={(file) => setIne('ineReverso', file)}
+                    hasError={!!fieldErrors.ineReverso}
+                    onFormatError={() => setFieldErrors((p) => ({ ...p, ineReverso: 'Solo se aceptan imágenes JPG o PNG.' }))}
+                  />
                 </Field>
               </div>
             </Section>
 
             <Section title="Domicilio">
               <div className="grid grid-cols-1 gap-x-6 gap-y-5 min-[576px]:grid-cols-2">
-                <Field label="Domicilio" icon={MapPin} required full>
-                  <input className={inputCls} style={inputStyle} value={f.calle} onChange={(e) => set('calle', e.target.value)} placeholder="Calle y referencias" required />
+                <Field label="Domicilio" icon={MapPin} required full error={fieldErrors.calle}>
+                  <input className={inputCls} style={inputStyleFor('calle')} value={f.calle} onChange={(e) => set('calle', e.target.value)} placeholder="Calle y referencias" required />
                 </Field>
-                <Field label="Colonia" icon={Map} required>
-                  <input className={inputCls} style={inputStyle} value={f.colonia} onChange={(e) => set('colonia', e.target.value)} placeholder="Colonia" required />
+                <Field label="Colonia" icon={Map} required error={fieldErrors.colonia}>
+                  <input className={inputCls} style={inputStyleFor('colonia')} value={f.colonia} onChange={(e) => set('colonia', e.target.value)} placeholder="Colonia" required />
                 </Field>
-                <Field label="Código postal" icon={Mail} required>
-                  <input className={inputCls} style={inputStyle} value={f.codigoPostal} onChange={(e) => set('codigoPostal', e.target.value)} placeholder="95700" required />
+                <Field label="Código postal" icon={Mail} required error={fieldErrors.codigoPostal}>
+                  <input className={inputCls} style={inputStyleFor('codigoPostal')} value={f.codigoPostal} onChange={(e) => set('codigoPostal', e.target.value)} placeholder="95700" required />
                 </Field>
-                <Field label="Número exterior" icon={Hash}>
-                  <input className={inputCls} style={inputStyle} value={f.numExt} onChange={(e) => set('numExt', e.target.value)} placeholder="Núm." />
+                <Field label="Número exterior" icon={Hash} error={fieldErrors.numExt}>
+                  <input className={inputCls} style={inputStyleFor('numExt')} value={f.numExt} onChange={(e) => set('numExt', e.target.value)} placeholder="Núm." />
                 </Field>
                 <Field label="Número interior" icon={Hash}>
                   <input className={inputCls} style={inputStyle} value={f.numInt} onChange={(e) => set('numInt', e.target.value)} />
@@ -228,11 +308,11 @@ export default function RegistroPage() {
 
             <Section title="Contacto y redes sociales">
               <div className="grid grid-cols-1 gap-x-6 gap-y-5 min-[576px]:grid-cols-2">
-                <Field label="Número de teléfono" icon={Phone} required>
-                  <input className={inputCls} style={inputStyle} type="tel" value={f.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="Ingresa tu número de teléfono" required />
+                <Field label="Número de teléfono" icon={Phone} required error={fieldErrors.telefono}>
+                  <input className={inputCls} style={inputStyleFor('telefono')} type="tel" value={f.telefono} onChange={(e) => set('telefono', e.target.value)} placeholder="Ingresa tu número de teléfono" required />
                 </Field>
-                <Field label="Correo electrónico" icon={Mail} required>
-                  <input className={inputCls} style={inputStyle} type="email" value={f.correo} onChange={(e) => set('correo', e.target.value)} placeholder="Ingresa tu correo electrónico" required />
+                <Field label="Correo electrónico" icon={Mail} required error={fieldErrors.correo}>
+                  <input className={inputCls} style={inputStyleFor('correo')} type="email" value={f.correo} onChange={(e) => set('correo', e.target.value)} placeholder="Ingresa tu correo electrónico" required />
                 </Field>
                 <Field label="Facebook" icon={Share2}>
                   <input className={inputCls} style={inputStyle} value={f.facebook} onChange={(e) => set('facebook', e.target.value)} placeholder="/usuario" />
@@ -251,19 +331,21 @@ export default function RegistroPage() {
 
             <Section title="Escolaridad y cuenta">
               <div className="grid grid-cols-1 gap-x-6 gap-y-5 min-[576px]:grid-cols-2">
-                <Field label="Escolaridad" icon={GraduationCap} required full>
-                  <input className={inputCls} style={inputStyle} value={f.escolaridad} onChange={(e) => set('escolaridad', e.target.value)} placeholder="Ej. Preparatoria" required />
+                <Field label="Escolaridad" icon={GraduationCap} required full error={fieldErrors.escolaridad}>
+                  <input className={inputCls} style={inputStyleFor('escolaridad')} value={f.escolaridad} onChange={(e) => set('escolaridad', e.target.value)} placeholder="Ej. Preparatoria" required />
                 </Field>
-                <Field label="Contraseña" icon={Lock} required>
-                  <input className={inputCls} style={inputStyle} type="password" minLength={8} value={f.password} onChange={(e) => set('password', e.target.value)} placeholder="Crea una contraseña" required />
+                <Field label="Contraseña" icon={Lock} required error={fieldErrors.password}>
+                  <input className={inputCls} style={inputStyleFor('password')} type="password" minLength={8} value={f.password} onChange={(e) => set('password', e.target.value)} placeholder="Crea una contraseña" required />
                 </Field>
-                <Field label="Confirma tu contraseña" icon={Lock} required>
+                <Field
+                  label="Confirma tu contraseña" icon={Lock} required
+                  error={f.passwordConfirm && f.password !== f.passwordConfirm ? 'Las contraseñas no coinciden.' : fieldErrors.passwordConfirm}
+                >
                   <input
                     className={inputCls}
-                    style={{ ...inputStyle, borderColor: f.passwordConfirm && f.password !== f.passwordConfirm ? '#b3261e' : inputStyle.borderColor }}
+                    style={(f.passwordConfirm && f.password !== f.passwordConfirm) || fieldErrors.passwordConfirm ? errorInputStyle : inputStyle}
                     type="password" value={f.passwordConfirm} onChange={(e) => set('passwordConfirm', e.target.value)} placeholder="Repite tu contraseña" required
                   />
-                  {f.passwordConfirm && f.password !== f.passwordConfirm && <p className="text-[0.8125rem]" style={{ color: '#b3261e' }}>Las contraseñas no coinciden.</p>}
                 </Field>
               </div>
             </Section>

@@ -9,6 +9,7 @@ import { EmailService } from '../email/email.service';
 import { edadFrom } from './edad';
 import { progresoNivel } from './nivel';
 import { assertEmailAvailable } from '../common/email-availability';
+import { encryptIne } from '../common/ine-crypto';
 import { RegisterStudentDto } from './dto/register-student.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
@@ -46,7 +47,24 @@ export class StudentsService {
     };
   }
 
-  async register(dto: RegisterStudentDto): Promise<StudentPublicView> {
+  private conflictFromUniqueError(err: unknown): never {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      const target = Array.isArray(err.meta?.target) ? (err.meta.target as string[]).join(',') : '';
+      if (target.includes('correo')) throw new ConflictException('El correo ya está en uso');
+      if (target.includes('curp')) throw new ConflictException('El CURP ya está registrado');
+      throw new ConflictException('Correo o CURP ya registrado');
+    }
+    throw err;
+  }
+
+  /**
+   * Registro atómico: nada se persiste (ni la cuenta) si la subida del INE falla.
+   * Si el INE falla después de crear la fila, se revierte (delete) para no dejar cuentas huérfanas.
+   */
+  async register(
+    dto: RegisterStudentDto,
+    ine: { frente: { buffer: Buffer; mimetype: string }; reverso: { buffer: Buffer; mimetype: string } },
+  ): Promise<{ session: { id: string }; view: StudentPublicView }> {
     // El correo debe ser único en TODO el padrón (interno / comercio / estudiante).
     await assertEmailAvailable(this.prisma, dto.correo);
     const existing = await this.prisma.student.findFirst({
@@ -63,8 +81,9 @@ export class StudentsService {
     const credentialToken = randomBytes(16).toString('base64url');
     const { password, interestIds, fechaNacimiento, ...rest } = dto;
 
+    let student: Student;
     try {
-      const student = await this.prisma.student.create({
+      student = await this.prisma.student.create({
         data: {
           ...rest,
           fechaNacimiento: new Date(fechaNacimiento),
@@ -75,13 +94,21 @@ export class StudentsService {
             : undefined,
         },
       });
-      return this.toPublicView(student);
     } catch (err) {
-      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-        throw new ConflictException('Correo o CURP ya registrado');
-      }
-      throw err;
+      this.conflictFromUniqueError(err);
     }
+
+    try {
+      const ineFrente = await this.storage.put(encryptIne(ine.frente.buffer), ine.frente.mimetype, `san-andres/${student.id}/ine-frente`);
+      const ineReverso = await this.storage.put(encryptIne(ine.reverso.buffer), ine.reverso.mimetype, `san-andres/${student.id}/ine-reverso`);
+      student = await this.prisma.student.update({ where: { id: student.id }, data: { ineFrente, ineReverso } });
+    } catch (err) {
+      await this.prisma.student.delete({ where: { id: student.id } }).catch(() => {});
+      throw new BadRequestException('No se pudo completar tu registro: falló la subida de tu INE. Intenta de nuevo.');
+    }
+
+    const session = await this.sessions.create('student', student.id, false);
+    return { session, view: this.toPublicView(student) };
   }
 
   async login(correo: string, password: string, remember: boolean) {
@@ -148,8 +175,8 @@ export class StudentsService {
     reverso: Buffer,
     reversoType: string,
   ) {
-    const ineFrente = await this.storage.put(frente, frenteType);
-    const ineReverso = await this.storage.put(reverso, reversoType);
+    const ineFrente = await this.storage.put(encryptIne(frente), frenteType, `san-andres/${studentId}/ine-frente`);
+    const ineReverso = await this.storage.put(encryptIne(reverso), reversoType, `san-andres/${studentId}/ine-reverso`);
     await this.prisma.student.update({ where: { id: studentId }, data: { ineFrente, ineReverso } });
     return { ok: true as const };
   }

@@ -18,4 +18,10 @@ describe('LocalDiskStorage', () => {
     expect(await storage.put(Buffer.from('a'), 'image/jpeg')).toMatch(/\.jpg$/);
     expect(await storage.put(Buffer.from('a'), 'application/x-foo')).toMatch(/\.bin$/);
   });
+
+  it('get devuelve los mismos bytes guardados por put', async () => {
+    const key = await storage.put(Buffer.from('contenido'), 'image/png');
+    const bytes = await storage.get(key);
+    expect(bytes.toString()).toBe('contenido');
+  });
 });

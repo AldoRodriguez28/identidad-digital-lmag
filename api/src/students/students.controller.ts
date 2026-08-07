@@ -12,28 +12,48 @@ import { StudentGuard } from './student.guard';
 import { CurrentStudent } from './current-student.decorator';
 import { isPngOrJpeg } from '../common/image-signature';
 import { PointsService } from '../points/points.service';
+import { SESSION_COOKIE_NAME as COOKIE, sessionCookieOptions } from '../common/session-cookie';
 
-const COOKIE = process.env.SESSION_COOKIE_NAME ?? 'idsid';
 const DAY = 24 * 60 * 60 * 1000;
 
 @Controller('students')
 export class StudentsController {
   constructor(private students: StudentsService, private points: PointsService) {}
 
+  private assertValidIneFile(file: Express.Multer.File | undefined, side: 'frente' | 'reverso'): asserts file is Express.Multer.File {
+    if (!file) throw new BadRequestException(`Falta la imagen del INE (${side})`);
+    const ALLOWED = ['image/png', 'image/jpeg'];
+    if (!ALLOWED.includes(file.mimetype)) throw new BadRequestException(`Formato inválido en el INE (${side}): solo PNG o JPG`);
+    if (!isPngOrJpeg(file.buffer)) throw new BadRequestException(`Contenido de imagen inválido en el INE (${side})`);
+  }
+
   @Post('register')
-  register(@Body() dto: RegisterStudentDto) {
-    return this.students.register(dto);
+  @UseInterceptors(FileFieldsInterceptor(
+    [{ name: 'ineFrente', maxCount: 1 }, { name: 'ineReverso', maxCount: 1 }],
+    { limits: { fileSize: 5 * 1024 * 1024 } },
+  ))
+  async register(
+    @Body() dto: RegisterStudentDto,
+    @UploadedFiles() files: { ineFrente?: Express.Multer.File[]; ineReverso?: Express.Multer.File[] },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const frente = files?.ineFrente?.[0];
+    const reverso = files?.ineReverso?.[0];
+    this.assertValidIneFile(frente, 'frente');
+    this.assertValidIneFile(reverso, 'reverso');
+
+    const { session, view } = await this.students.register(dto, {
+      frente: { buffer: frente.buffer, mimetype: frente.mimetype },
+      reverso: { buffer: reverso.buffer, mimetype: reverso.mimetype },
+    });
+    res.cookie(COOKIE, session.id, sessionCookieOptions(DAY));
+    return view;
   }
 
   @Post('login')
   async login(@Body() dto: StudentLoginDto, @Res({ passthrough: true }) res: Response) {
     const { session, view } = await this.students.login(dto.correo, dto.password, !!dto.remember);
-    res.cookie(COOKIE, session.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: dto.remember ? 7 * DAY : DAY,
-    });
+    res.cookie(COOKIE, session.id, sessionCookieOptions(dto.remember ? 7 * DAY : DAY));
     return view;
   }
 
@@ -41,7 +61,7 @@ export class StudentsController {
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const sid = req.cookies?.[COOKIE];
     if (sid) await this.students.logout(sid);
-    res.clearCookie(COOKIE, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+    res.clearCookie(COOKIE, sessionCookieOptions());
     return { ok: true };
   }
 
@@ -95,14 +115,8 @@ export class StudentsController {
   ) {
     const frente = files?.ineFrente?.[0];
     const reverso = files?.ineReverso?.[0];
-    if (!frente || !reverso) throw new BadRequestException('Se requieren INE frente y reverso');
-    const ALLOWED = ['image/png', 'image/jpeg'];
-    if (!ALLOWED.includes(frente.mimetype) || !ALLOWED.includes(reverso.mimetype)) {
-      throw new BadRequestException('Formato inválido: solo PNG o JPG');
-    }
-    if (!isPngOrJpeg(frente.buffer) || !isPngOrJpeg(reverso.buffer)) {
-      throw new BadRequestException('Contenido de imagen inválido');
-    }
+    this.assertValidIneFile(frente, 'frente');
+    this.assertValidIneFile(reverso, 'reverso');
     return this.students.saveIne(student.id, frente.buffer, frente.mimetype, reverso.buffer, reverso.mimetype);
   }
 }

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   IdCard, CreditCard, CalendarDays, Star, Store, Rocket, GraduationCap, Dumbbell, Palette,
-  Bell, LogOut, LogIn, MessageCircle, Settings,
+  Bell, LogOut, LogIn, MessageCircle, Settings, Menu, X,
 } from 'lucide-react';
 import { api } from '../lib/api';
 
@@ -32,6 +32,8 @@ export function StudentShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [nombre, setNombre] = useState<string | null>(null);
   const [checked, setChecked] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [prevPathname, setPrevPathname] = useState(pathname);
 
   useEffect(() => {
     api('/students/me').then(async (r) => {
@@ -39,14 +41,37 @@ export function StudentShell({ children }: { children: React.ReactNode }) {
     }).catch(() => {}).finally(() => setChecked(true));
   }, []);
 
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setMobileOpen(false);
+  }
+
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
+
   async function logout() { await api('/students/logout', { method: 'POST' }); router.push('/ingresar'); }
 
   return (
     <div className="flex min-h-screen bg-page">
+      {mobileOpen && (
+        <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setMobileOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside className="hidden w-72 shrink-0 flex-col bg-guinda text-white md:flex">
-        <div className="px-6 py-6">
+      <aside
+        className={[
+          'fixed inset-y-0 left-0 z-40 flex w-72 shrink-0 flex-col bg-guinda text-white transition-transform duration-200 ease-in-out',
+          'md:static md:translate-x-0',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+        ].join(' ')}
+      >
+        <div className="flex items-center justify-between px-6 py-6">
           <Image src="/brand/logo-ayuntamiento.png" alt="Ayuntamiento de San Andrés Tuxtla" width={528} height={256} priority className="h-auto w-44 brightness-0 invert" />
+          <button onClick={() => setMobileOpen(false)} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-white/80 hover:bg-white/10 md:hidden" aria-label="Cerrar menú">
+            <X size={20} />
+          </button>
         </div>
         <nav className="mt-2 flex-1 space-y-1 px-3">
           {NAV.map(({ href, label, icon: Icon, disabled }) => {
@@ -59,7 +84,7 @@ export function StudentShell({ children }: { children: React.ReactNode }) {
               );
             }
             return (
-              <Link key={href} href={href}
+              <Link key={href} href={href} onClick={() => setMobileOpen(false)}
                 className={['flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                   active ? 'bg-dorado text-guinda-900 font-semibold shadow-sm' : 'text-white/85 hover:bg-white/10'].join(' ')}>
                 <Icon size={18} className="shrink-0" />{label}
@@ -75,16 +100,21 @@ export function StudentShell({ children }: { children: React.ReactNode }) {
 
       {/* Main */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 items-center justify-end gap-3 px-6">
-          <button className="grid h-10 w-10 place-items-center rounded-full text-guinda ring-1 ring-guinda/20 hover:bg-guinda/5" aria-label="Notificaciones"><Bell size={18} /></button>
-          {nombre ? (
-            <>
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-guinda text-sm font-semibold text-white" title={nombre}>{initials(nombre)}</span>
-              <button onClick={logout} className="grid h-10 w-10 place-items-center rounded-full text-guinda ring-1 ring-guinda/20 hover:bg-guinda/5" aria-label="Salir"><LogOut size={18} /></button>
-            </>
-          ) : checked ? (
-            <Link href="/ingresar" className="inline-flex items-center gap-2 rounded-full bg-guinda px-4 py-2 text-sm font-semibold text-white hover:bg-guinda-700"><LogIn size={16} />Ingresar</Link>
-          ) : null}
+        <header className="flex h-16 items-center justify-between gap-3 px-4 md:justify-end md:px-6">
+          <button onClick={() => setMobileOpen(true)} className="grid h-10 w-10 place-items-center rounded-full text-guinda ring-1 ring-guinda/20 hover:bg-guinda/5 md:hidden" aria-label="Abrir menú">
+            <Menu size={20} />
+          </button>
+          <div className="flex items-center gap-3">
+            <button className="grid h-10 w-10 place-items-center rounded-full text-guinda ring-1 ring-guinda/20 hover:bg-guinda/5" aria-label="Notificaciones"><Bell size={18} /></button>
+            {nombre ? (
+              <>
+                <span className="grid h-10 w-10 place-items-center rounded-full bg-guinda text-sm font-semibold text-white" title={nombre}>{initials(nombre)}</span>
+                <button onClick={logout} className="grid h-10 w-10 place-items-center rounded-full text-guinda ring-1 ring-guinda/20 hover:bg-guinda/5" aria-label="Salir"><LogOut size={18} /></button>
+              </>
+            ) : checked ? (
+              <Link href="/ingresar" className="inline-flex items-center gap-2 rounded-full bg-guinda px-4 py-2 text-sm font-semibold text-white hover:bg-guinda-700"><LogIn size={16} />Ingresar</Link>
+            ) : null}
+          </div>
         </header>
         <main className="flex-1 px-6 pb-10">{children}</main>
       </div>

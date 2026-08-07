@@ -1,5 +1,4 @@
-import { Controller, Get, NotFoundException, Param, Res, StreamableFile } from '@nestjs/common';
-import { createReadStream, existsSync } from 'fs';
+import { Controller, Get, Param, Res, StreamableFile } from '@nestjs/common';
 import type { Response } from 'express';
 import { CommerceService } from './commerce.service';
 
@@ -12,9 +11,8 @@ export class BenefitsController {
 
   @Get(':id/logo')
   async logo(@Param('id') id: string, @Res({ passthrough: true }) res: Response): Promise<StreamableFile> {
-    const { path, contentType } = await this.commerce.getLogoPath(id);
-    if (!existsSync(path)) throw new NotFoundException();
+    const { buffer, contentType } = await this.commerce.getLogoFile(id);
     res.set({ 'Content-Type': contentType, 'Cache-Control': 'public, max-age=86400' });
-    return new StreamableFile(createReadStream(path));
+    return new StreamableFile(buffer);
   }
 }
