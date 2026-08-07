@@ -20,11 +20,14 @@ export const metadata: Metadata = {
   title: "Identidad Digital Juvenil",
   description: "Tu credencial digital juvenil: puntos, eventos y beneficios.",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Identidad" },
-  icons: { apple: "/icons/apple-touch-icon.png" },
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#000000",
+  themeColor: "#58101f",
   width: "device-width",
   initialScale: 1,
 };
